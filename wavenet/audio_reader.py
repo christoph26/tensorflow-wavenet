@@ -44,6 +44,7 @@ def load_npz_audio(directory, sample_rate):
         data = np.load(open(filename, 'rb'))
         for file_i in data:
             X,Y = data[file_i]
+            X = X.astype("float32")
             X = X.reshape(-1,1)
             yield X, '{}_{}'.format(filename, file_i)
 
