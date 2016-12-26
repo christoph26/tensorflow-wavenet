@@ -38,6 +38,15 @@ def load_vctk_audio(directory, sample_rate):
         speaker_id, recording_id = [int(id_) for id_ in matches]
         yield audio, speaker_id
 
+def load_npz_audio(directory, sample_rate):
+    files = find_files(directory, pattern='*.npz')
+    for filename in files:
+        data = np.load(open(filename, 'rb'))
+        for file_i in data:
+            X,Y = data[file_i]
+            X = X.reshape(-1,1)
+            yield X, '{}_{}'.format(filename, file_i)
+
 
 def trim_silence(audio, threshold):
     '''Removes silence at the beginning and end of a sample.'''
@@ -87,7 +96,7 @@ class AudioReader(object):
         stop = False
         # Go through the dataset multiple times
         while not stop:
-            iterator = load_generic_audio(self.audio_dir, self.sample_rate)
+            iterator = load_npz_audio(self.audio_dir, self.sample_rate)
             for audio, filename in iterator:
                 if self.coord.should_stop():
                     stop = True
