@@ -7,6 +7,7 @@ import librosa
 import numpy as np
 import tensorflow as tf
 
+import csv
 
 def find_files(directory, pattern='*.wav'):
     '''Recursively finds all files matching the pattern.'''
@@ -41,9 +42,17 @@ def load_vctk_audio(directory, sample_rate):
 def load_npz_audio(directory, sample_rate):
     files = find_files(directory, pattern='*.npz')
     for filename in files:
-        data = np.load(open(filename, 'rb'))
-        for file_i in data:
-            X,Y = data[file_i]
+        keys = []
+        if os.path.isfile(filename[:-4]+"_metadata.csv"):
+            with open(filename[:-4]+"_metadata.csv", 'r') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if row[1] == "Beethoven" and row[2].find("Piano") >= 0:
+                        keys.append(row[0])
+        print(keys)
+        data = np.load(open(filename, 'rb'), encoding='bytes')
+        for file_i in keys:
+            X,Y = data[str(file_i)]
             X = X.astype("float32")
             X = X.reshape(-1,1)
             yield X, '{}_{}'.format(filename, file_i)
