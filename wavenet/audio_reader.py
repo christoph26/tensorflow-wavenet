@@ -43,14 +43,15 @@ def load_npz_audio(directory, sample_rate):
     files = find_files(directory, pattern='*.npz')
     for filename in files:
         keys = []
+        data = np.load(open(filename, 'rb'), encoding='bytes')
         if os.path.isfile(filename[:-4]+"_metadata.csv"):
             with open(filename[:-4]+"_metadata.csv", 'r') as f:
                 reader = csv.reader(f)
                 for row in reader:
                     if row[1] == "Beethoven" and row[2].find("Piano") >= 0:
                         keys.append(row[0])
-        print(keys)
-        data = np.load(open(filename, 'rb'), encoding='bytes')
+        else:
+            keys = data.files
         for file_i in keys:
             X,Y = data[str(file_i)]
             X = X.astype("float32")
