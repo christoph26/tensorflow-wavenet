@@ -52,6 +52,7 @@ def load_npz_audio(directory, sample_rate):
                         keys.append(row[0])
         else:
             keys = data.files
+        import ipdb; ipdb.set_trace()
         for file_i in keys:
             X,Y = data[str(file_i)]
             X = X.astype("float32")

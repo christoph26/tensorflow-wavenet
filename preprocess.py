@@ -196,13 +196,12 @@ if __name__ == '__main__':
 	parser.add_argument("--pca_file", type=str, default=None, help="Path of the pca output file")
 	args = parser.parse_args()
 
-	pca_file = args.pca_file if args.pca_file else args.data_file[:-4]+"_pca.h5"
 	#h5f = h5py.File(output_file, 'w')
 	#for key, data in load_npz(args.data_file):
 	#	processed_data = preprocess(data)
 	#	h5f.create_dataset(key, data=processed_data)
 	#h5f.close()
 
-	preprocess(args.data_file, freq_file, pca_file)
+	preprocess(args.data_file, args.freq_file, args.pca_file)
 
 	#np.save(output_file, proc_data)
