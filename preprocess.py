@@ -66,6 +66,11 @@ def save_pca(input_file, output_file):
 	for key, data in load_h5f(input_file):
 		pca.partial_fit(data)
 
+		if VERBOSE:
+			print("pca of file {} fitted".format(key))
+
+	if VERBOSE:
+		print("pca fitting done")
 	h5f = h5py.File(output_file, 'w')
 	h5f.create_dataset('pca/mean_', data=pca.mean_)
 	h5f.create_dataset('pca/components_', data=pca.components_)
@@ -74,6 +79,11 @@ def save_pca(input_file, output_file):
 		coeff = pca.transform(data)
 		h5f.create_dataset('coeff/{}'.format(key), data=coeff)
 
+		if VERBOSE:
+			print("pca coefficients of file {} generated".format(key))
+
+	if VERBOSE:
+		print("pca coefficients generation done")
 	h5f.close()
 
 class Audio_PCA(IncrementalPCA):
@@ -145,8 +155,8 @@ def load_freq(input, output_file=None):
 			h5f.create_dataset(key, data=Xs_red)
 		else:
 			ret[key] = Xs_red
-
-		print("frequencies of file {} converted into audio signal".format(key))
+		if VERBOSE:
+			print("frequencies of file {} converted into audio signal".format(key))
 
 	if output_file:
 		h5f.close()
@@ -165,7 +175,7 @@ def load_npz(filename):
 	data = np.load(open(filename, 'rb'), encoding='bytes')
 	if VERBOSE:
 		print("reading {} files".format(len(data.files)))
-	for key in data.files[:2]:
+	for key in data.files:
 		print("reading file {}".format(key))
 		yield key, data[key][0].astype("float32")
 
@@ -186,7 +196,7 @@ def preprocess(data_file, freq_file=None, pca_file=None):
 	if not pca_file:
 		pca_file = data_file[:-4]+"_pca.h5"
 
-	save_frequencies(data_file, freq_file)
+	#save_frequencies(data_file, freq_file)
 	save_pca(freq_file, pca_file)
 
 if __name__ == '__main__':
