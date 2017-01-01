@@ -7,6 +7,7 @@ import json
 import os
 
 import librosa
+import h5py
 import numpy as np
 import tensorflow as tf
 
@@ -71,6 +72,11 @@ def get_arguments():
         default=None,
         help='Path to output wav file')
     parser.add_argument(
+        '--pca_out_path',
+        type=str,
+        default=None,
+        help='Path to output wav file')
+    parser.add_argument(
         '--save_every',
         type=int,
         default=SAVE_EVERY,
@@ -93,6 +99,11 @@ def write_wav(waveform, sample_rate, filename):
     librosa.output.write_wav(filename, y, sample_rate)
     print('Updated wav file at {}'.format(filename))
 
+def write_pca(waveform, sample_rate, filename):
+    y = np.array(waveform)
+    h5f = h5py.File(filename, 'w')
+    h5f.create_dataset('generated', data=waveform)
+    print('Updated h5 file at {}'.format(filename))
 
 def create_seed(filename,
                 sample_rate,
@@ -132,6 +143,7 @@ def main():
         initial_filter_width=wavenet_params['initial_filter_width'])
 
     samples = tf.placeholder(tf.int32)
+    samples = tf.placeholder(tf.float32)
 
     if args.fast_generation:
         next_sample = net.predict_proba_incremental(samples)
@@ -159,7 +171,8 @@ def main():
                            quantization_channels)
         waveform = sess.run(seed).tolist()
     else:
-        waveform = np.random.randint(quantization_channels, size=(1,)).tolist()
+        #waveform = np.random.randint(quantization_channels, size=(1,)).tolist()
+        waveform = np.zeros((1,quantization_channels)).tolist()
 
     if args.fast_generation and args.wav_seed:
         # When using the incremental generation, we need to
@@ -195,18 +208,25 @@ def main():
         prediction = sess.run(outputs, feed_dict={samples: window})[0]
 
         # Scale prediction distribution using temperature.
-        np.seterr(divide='ignore')
-        scaled_prediction = np.log(prediction) / args.temperature
-        scaled_prediction = scaled_prediction - np.logaddexp.reduce(scaled_prediction)
-        scaled_prediction = np.exp(scaled_prediction)
-        np.seterr(divide='warn')
+        
+        if args.temperature != 1.0:
+            np.seterr(divide='ignore')
+            scaled_prediction = np.log(prediction) / args.temperature
+            scaled_prediction = scaled_prediction - np.logaddexp.reduce(scaled_prediction)
+            scaled_prediction = np.exp(scaled_prediction)
+            np.seterr(divide='warn')
+        else:
+            scaled_prediction = prediction
 
         # Prediction distribution at temperature=1.0 should be unchanged after scaling.
         if args.temperature == 1.0:
             np.testing.assert_allclose(prediction, scaled_prediction, atol=1e-5, err_msg='Prediction scaling at temperature=1.0 is not working as intended.')
 
-        sample = np.random.choice(
-            np.arange(quantization_channels), p=scaled_prediction)
+        #sample = np.random.choice(
+        #    np.arange(quantization_channels), p=scaled_prediction)
+
+        #New: Take the output as it is
+        sample = scaled_prediction
         waveform.append(sample)
 
         # Show progress only once per second.
@@ -222,6 +242,10 @@ def main():
                 (step + 1) % args.save_every == 0):
             out = sess.run(decode, feed_dict={samples: waveform})
             write_wav(out, wavenet_params['sample_rate'], args.wav_out_path)
+
+        if (args.pca_out_path and args.save_every and (step + 1) % args.save_every == 0):
+            out = sess.run(decode, feed_dict={samples: waveform})
+            write_pca(out, wavenet_params['sample_rate'], args.pca_out_path)
 
     # Introduce a newline to clear the carriage return from the progress.
     print()
@@ -239,6 +263,10 @@ def main():
     if args.wav_out_path:
         out = sess.run(decode, feed_dict={samples: waveform})
         write_wav(out, wavenet_params['sample_rate'], args.wav_out_path)
+
+    if args.pca_out_path:
+        out = sess.run(decode, feed_dict={samples: waveform})
+        write_pca(out, wavenet_params['sample_rate'], args.pca_out_path)
 
     print('Finished generating. The result can be viewed in TensorBoard.')
 

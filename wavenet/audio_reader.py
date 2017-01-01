@@ -4,6 +4,7 @@ import re
 import threading
 
 import librosa
+import h5py
 import numpy as np
 import tensorflow as tf
 
@@ -52,11 +53,20 @@ def load_npz_audio(directory, sample_rate):
                         keys.append(row[0])
         else:
             keys = data.files
-        import ipdb; ipdb.set_trace()
         for file_i in keys:
             X,Y = data[str(file_i)]
             X = X.astype("float32")
             X = X.reshape(-1,1)
+            yield X, '{}_{}'.format(filename, file_i)
+
+def load_pca_audio(directory, sample_rate):
+    files = find_files(directory, pattern='*_pca.h5')
+    for filename in files:
+        print(filename)
+        h5f = h5py.File(filename, 'r')
+        for file_i in h5f['coeff']:
+            X = h5f['coeff/{}'.format(file_i)].value
+            print(X.shape)
             yield X, '{}_{}'.format(filename, file_i)
 
 
@@ -90,7 +100,7 @@ class AudioReader(object):
         self.sample_placeholder = tf.placeholder(dtype=tf.float32, shape=None)
         self.queue = tf.PaddingFIFOQueue(queue_size,
                                          ['float32'],
-                                         shapes=[(None, 1)])
+                                         shapes=[(None, 100)])
         self.enqueue = self.queue.enqueue([self.sample_placeholder])
 
         # TODO Find a better way to check this.
@@ -108,20 +118,22 @@ class AudioReader(object):
         stop = False
         # Go through the dataset multiple times
         while not stop:
-            iterator = load_npz_audio(self.audio_dir, self.sample_rate)
+            iterator = load_pca_audio(self.audio_dir, self.sample_rate)
             for audio, filename in iterator:
                 if self.coord.should_stop():
                     stop = True
                     break
-                if self.silence_threshold is not None:
+
+                # Silence threshold not needed with pca data, since this is alrady taken into account when producing the pca data
+                #if self.silence_threshold is not None:
                     # Remove silence
-                    audio = trim_silence(audio[:, 0], self.silence_threshold)
-                    audio = audio.reshape(-1, 1)
-                    if audio.size == 0:
-                        print("Warning: {} was ignored as it contains only "
-                              "silence. Consider decreasing trim_silence "
-                              "threshold, or adjust volume of the audio."
-                              .format(filename))
+                #    audio = trim_silence(audio[:, 0], self.silence_threshold)
+                #    audio = audio.reshape(-1, 1)
+                #    if audio.size == 0:
+                #        print("Warning: {} was ignored as it contains only "
+                #              "silence. Consider decreasing trim_silence "
+                #              "threshold, or adjust volume of the audio."
+                #              .format(filename))
 
                 if self.sample_size:
                     # Cut samples into fixed size pieces

@@ -431,12 +431,15 @@ class WaveNetModel(object):
                 encoded = tf.cast(waveform, tf.float32)
                 encoded = tf.reshape(encoded, [-1, 1])
             else:
-                encoded = self._one_hot(waveform)
+                #encoded = self._one_hot(waveform)
+                #New: Take input as it is
+                encoded = waveform
             raw_output = self._create_network(encoded)
             out = tf.reshape(raw_output, [-1, self.quantization_channels])
             # Cast to float64 to avoid bug in TensorFlow
             proba = tf.cast(
-                tf.nn.softmax(tf.cast(out, tf.float64)), tf.float32)
+                #tf.nn.softmax(tf.cast(out, tf.float64)), tf.float32)
+                out, tf.float32)
             last = tf.slice(
                 proba,
                 [tf.shape(proba)[0] - 1, 0],
@@ -455,12 +458,17 @@ class WaveNetModel(object):
                                       "support scalar input yet.")
         with tf.name_scope(name):
 
-            encoded = tf.one_hot(waveform, self.quantization_channels)
+            #encoded = tf.one_hot(waveform, self.quantization_channels)
+            
+            #New: Take input as it is
+            encoded = waveform
+
             encoded = tf.reshape(encoded, [-1, self.quantization_channels])
             raw_output = self._create_generator(encoded)
             out = tf.reshape(raw_output, [-1, self.quantization_channels])
             proba = tf.cast(
-                tf.nn.softmax(tf.cast(out, tf.float64)), tf.float32)
+                #tf.nn.softmax(tf.cast(out, tf.float64)), tf.float32)
+                out, tf.float32)
             last = tf.slice(
                 proba,
                 [tf.shape(proba)[0] - 1, 0],
@@ -476,17 +484,24 @@ class WaveNetModel(object):
         The variables are all scoped to the given name.
         '''
         with tf.name_scope(name):
-            # We mu-law encode and quantize the input audioform.
-            input_batch = mu_law_encode(input_batch,
-                                        self.quantization_channels)
 
-            encoded = self._one_hot(input_batch)
+            # Part removed because it bases on the input as only one number per frame and not a vector per window.
+
+            # We mu-law encode and quantize the input audioform.
+            #input_batch = mu_law_encode(input_batch,
+            #                            self.quantization_channels)
+
+            #encoded = self._one_hot(input_batch)
+
+            # New: no encoding of the input
+            encoded = input_batch
             if self.scalar_input:
                 network_input = tf.reshape(
                     tf.cast(input_batch, tf.float32),
                     [self.batch_size, -1, 1])
             else:
                 network_input = encoded
+
 
             raw_output = self._create_network(network_input)
 
@@ -499,9 +514,10 @@ class WaveNetModel(object):
 
                 prediction = tf.reshape(raw_output,
                                         [-1, self.quantization_channels])
-                loss = tf.nn.softmax_cross_entropy_with_logits(
-                    prediction,
-                    tf.reshape(shifted, [-1, self.quantization_channels]))
+                #loss = tf.nn.softmax_cross_entropy_with_logits(
+                #    prediction,
+                #    tf.reshape(shifted, [-1, self.quantization_channels]))
+                loss = tf.square(prediction-tf.reshape(shifted, [-1, self.quantization_channels]))
                 reduced_loss = tf.reduce_mean(loss)
 
                 tf.scalar_summary('loss', reduced_loss)
