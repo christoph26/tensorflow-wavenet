@@ -68,7 +68,7 @@ def load_pca_audio(directory, sample_rate):
                 reader = csv.reader(f)
                 for row in reader:
                     if row[1] == "Beethoven" and row[2].find("Piano") >= 0:
-                        keys.append(row[0])
+                        keys.append("id_"+str(row[0]))
         else:
             keys = h5f['coeff']
 
