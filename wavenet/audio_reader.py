@@ -73,7 +73,7 @@ def load_pca_audio(directory, sample_rate):
             keys = h5f['coeff']
 
         h5f = h5py.File(filename, 'r')
-        keys = [2322]
+        keys = ["id_2322"]
         for file_i in keys:
             X = h5f['coeff/{}'.format(file_i)].value
             yield X, '{}_{}'.format(filename, file_i)
