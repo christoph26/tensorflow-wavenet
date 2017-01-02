@@ -154,7 +154,6 @@ class AudioReader(object):
                                  feed_dict={self.sample_placeholder: piece})
                         buffer_ = buffer_[self.sample_size:]
                 else:
-                    import ipdb; ipdb.set_trace()
                     sess.run(self.enqueue,
                              feed_dict={self.sample_placeholder: audio})
 
