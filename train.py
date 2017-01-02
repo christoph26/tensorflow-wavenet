@@ -232,6 +232,7 @@ def main():
         histograms=args.histograms)
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
+
     loss = net.loss(audio_batch, args.l2_regularization_strength)
     optimizer = optimizer_factory[args.optimizer](
                     learning_rate=args.learning_rate,

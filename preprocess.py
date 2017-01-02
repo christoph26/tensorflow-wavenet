@@ -101,11 +101,12 @@ class Audio_PCA(IncrementalPCA):
 		freq = freq_coeff[:,:nb_freq]+1j*freq_coeff[:,nb_freq:]
 		return freq
 
-def load_pca(input_file, output_file=None):
+def load_pca(input_file, coeff_file=None, output_file=None):
 	'''
 	input = pca coeffs
 	output = frequencies
 	'''
+
 	h5f = h5py.File(input_file, 'r')
 	pca = Audio_PCA()
 	pca.components_ = h5f["pca/components_"].value
@@ -116,8 +117,13 @@ def load_pca(input_file, output_file=None):
 	else:
 		freqs = dict()
 
-	for key in h5f["coeff"]:
-		coeff = h5f["coeff"][key].value
+	if coeff_file:
+		h5f = h5py.File(coeff_file, 'r')
+	else:
+		h5f = h5f["coeff"]
+
+	for key in h5f:
+		coeff = h5f[key].value
 		freq = pca.inverse_transform(coeff)
 		if output_file:
 			h5f_freq.create_dataset(key, data=freq)

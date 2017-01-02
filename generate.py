@@ -206,6 +206,7 @@ def main():
 
         # Run the WaveNet to predict the next sample.
         prediction = sess.run(outputs, feed_dict={samples: window})[0]
+        import ipdb; ipdb.set_trace()
 
         # Scale prediction distribution using temperature.
         

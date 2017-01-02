@@ -53,6 +53,7 @@ def load_npz_audio(directory, sample_rate):
                         keys.append(row[0])
         else:
             keys = data.files
+        keys = [2322]
         for file_i in keys:
             X,Y = data[str(file_i)]
             X = X.astype("float32")
@@ -153,6 +154,7 @@ class AudioReader(object):
                                  feed_dict={self.sample_placeholder: piece})
                         buffer_ = buffer_[self.sample_size:]
                 else:
+                    import ipdb; ipdb.set_trace()
                     sess.run(self.enqueue,
                              feed_dict={self.sample_placeholder: audio})
 
