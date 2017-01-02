@@ -53,7 +53,6 @@ def load_npz_audio(directory, sample_rate):
                         keys.append(row[0])
         else:
             keys = data.files
-        keys = [2322]
         for file_i in keys:
             X,Y = data[str(file_i)]
             X = X.astype("float32")
@@ -74,9 +73,9 @@ def load_pca_audio(directory, sample_rate):
             keys = h5f['coeff']
 
         h5f = h5py.File(filename, 'r')
+        keys[2322]
         for file_i in keys:
             X = h5f['coeff/{}'.format(file_i)].value
-            print(X.shape)
             yield X, '{}_{}'.format(filename, file_i)
 
 
