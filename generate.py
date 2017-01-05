@@ -16,7 +16,7 @@ from wavenet import WaveNetModel, mu_law_decode, mu_law_encode, audio_reader
 SAMPLES = 16000
 TEMPERATURE = 1.0
 LOGDIR = './logdir'
-WINDOW = 8000
+WINDOW = 1000 #8000
 WAVENET_PARAMS = './wavenet_params.json'
 SAVE_EVERY = None
 SILENCE_THRESHOLD = 0.1
@@ -84,13 +84,19 @@ def get_arguments():
     parser.add_argument(
         '--fast_generation',
         type=_str_to_bool,
-        default=True,
+        #default=True,
+        default=False,
         help='Use fast generation')
     parser.add_argument(
-        '--wav_seed',
+        '--pca_seed',
         type=str,
         default=None,
-        help='The wav file to start generation from')
+        help='The pca file to start generation from')
+    parser.add_argument(
+        '--pca_seed_key',
+        type=str,
+        default=None,
+        help='The key of the pca to start generation from')
     return parser.parse_args()
 
 
@@ -106,16 +112,22 @@ def write_pca(waveform, sample_rate, filename):
     print('Updated h5 file at {}'.format(filename))
 
 def create_seed(filename,
+                file_key,
                 sample_rate,
                 quantization_channels,
                 window_size=WINDOW,
                 silence_threshold=SILENCE_THRESHOLD):
-    audio, _ = librosa.load(filename, sr=sample_rate, mono=True)
-    audio = audio_reader.trim_silence(audio, silence_threshold)
+    #audio, _ = librosa.load('/mnt/c/Users/Luzi/Music/williamson-a_few_things_to_hear_before_we_all_blow_up-12-a_please_goodbye_from_whore-59-88.mp3.wav', sr=sample_rate, mono=True)
+    #audio = audio_reader.trim_silence(audio, silence_threshold)
 
-    quantized = mu_law_encode(audio, quantization_channels)
-    cut_index = tf.cond(tf.size(quantized) < tf.constant(window_size),
-            lambda: tf.size(quantized),
+    #quantized = mu_law_encode(audio, quantization_channels)
+
+
+    f = h5py.File(filename, 'r')
+    quantized = tf.constant(f[file_key].value)
+
+    cut_index = tf.cond(tf.shape(quantized)[0] < tf.constant(window_size),
+            lambda: tf.shape(quantized)[0],
             lambda: tf.constant(window_size))
 
     return quantized[:cut_index]
@@ -165,8 +177,8 @@ def main():
     decode = mu_law_decode(samples, wavenet_params['quantization_channels'])
 
     quantization_channels = wavenet_params['quantization_channels']
-    if args.wav_seed:
-        seed = create_seed(args.wav_seed,
+    if args.pca_seed:
+        seed = create_seed(args.pca_seed, args.pca_seed_key,
                            wavenet_params['sample_rate'],
                            quantization_channels)
         waveform = sess.run(seed).tolist()
@@ -174,7 +186,7 @@ def main():
         #waveform = np.random.randint(quantization_channels, size=(1,)).tolist()
         waveform = np.zeros((1,quantization_channels)).tolist()
 
-    if args.fast_generation and args.wav_seed:
+    if args.fast_generation and args.pca_seed:
         # When using the incremental generation, we need to
         # feed in all priming samples one by one before starting the
         # actual generation.
@@ -203,10 +215,10 @@ def main():
             else:
                 window = waveform
             outputs = [next_sample]
+            window = np.reshape(window, (-1, quantization_channels)).tolist()
 
         # Run the WaveNet to predict the next sample.
         prediction = sess.run(outputs, feed_dict={samples: window})[0]
-        import ipdb; ipdb.set_trace()
 
         # Scale prediction distribution using temperature.
         
@@ -245,8 +257,8 @@ def main():
             write_wav(out, wavenet_params['sample_rate'], args.wav_out_path)
 
         if (args.pca_out_path and args.save_every and (step + 1) % args.save_every == 0):
-            out = sess.run(decode, feed_dict={samples: waveform})
-            write_pca(out, wavenet_params['sample_rate'], args.pca_out_path)
+            #out = sess.run(decode, feed_dict={samples: waveform})
+            write_pca(waveform, wavenet_params['sample_rate'], args.pca_out_path)
 
     # Introduce a newline to clear the carriage return from the progress.
     print()
@@ -266,8 +278,8 @@ def main():
         write_wav(out, wavenet_params['sample_rate'], args.wav_out_path)
 
     if args.pca_out_path:
-        out = sess.run(decode, feed_dict={samples: waveform})
-        write_pca(out, wavenet_params['sample_rate'], args.pca_out_path)
+        #out = sess.run(decode, feed_dict={samples: waveform})
+        write_pca(waveform, wavenet_params['sample_rate'], args.pca_out_path)
 
     print('Finished generating. The result can be viewed in TensorBoard.')
 

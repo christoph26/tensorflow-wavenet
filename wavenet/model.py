@@ -433,7 +433,9 @@ class WaveNetModel(object):
             else:
                 #encoded = self._one_hot(waveform)
                 #New: Take input as it is
-                encoded = waveform
+                encoded = tf.reshape(waveform, [1, -1, 100])
+
+
             raw_output = self._create_network(encoded)
             out = tf.reshape(raw_output, [-1, self.quantization_channels])
             # Cast to float64 to avoid bug in TensorFlow
@@ -501,7 +503,6 @@ class WaveNetModel(object):
                     [self.batch_size, -1, 1])
             else:
                 network_input = encoded
-
 
             raw_output = self._create_network(network_input)
 

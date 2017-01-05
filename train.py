@@ -233,6 +233,7 @@ def main():
     if args.l2_regularization_strength == 0:
         args.l2_regularization_strength = None
 
+
     loss = net.loss(audio_batch, args.l2_regularization_strength)
     optimizer = optimizer_factory[args.optimizer](
                     learning_rate=args.learning_rate,
@@ -269,6 +270,7 @@ def main():
 
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
     reader.start_threads(sess)
+    import ipdb; ipdb.set_trace()
 
     step = None
     try:
