@@ -62,18 +62,8 @@ def load_npz_audio(directory, sample_rate):
 def load_pca_audio(directory, sample_rate):
     files = find_files(directory, pattern='*_pca.h5')
     for filename in files:
-        if os.path.isfile(filename[:-7]+"_metadata.csv"):
-            keys = []
-            with open(filename[:-7]+"_metadata.csv", 'r') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if row[1] == "Beethoven" and row[2].find("Piano") >= 0:
-                        keys.append("id_"+str(row[0]))
-        else:
-            keys = h5f['coeff']
-
         h5f = h5py.File(filename, 'r')
-        keys = ["id_2322"]
+        keys = h5f['coeff']
         for file_i in keys:
             X = h5f['coeff/{}'.format(file_i)].value
             yield X, '{}_{}'.format(filename, file_i)

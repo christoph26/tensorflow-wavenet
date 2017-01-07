@@ -49,7 +49,7 @@ def freq_extraction(data):
 
 def save_frequencies(input_file, output_file):
 	h5f = h5py.File(output_file, 'w')
-	for key, data in load_musicnet(input_file):
+	for key, data in load_npz(input_file):#load_musicnet(input_file):
 		freq = freq_extraction(data)
 		h5f.create_dataset(key, data=freq)
 		if VERBOSE:
@@ -202,7 +202,7 @@ def preprocess(data_file, freq_file=None, pca_file=None):
 	if not pca_file:
 		pca_file = data_file[:-4]+"_pca.h5"
 
-	#save_frequencies(data_file, freq_file)
+	save_frequencies(data_file, freq_file)
 	save_pca(freq_file, pca_file)
 
 if __name__ == '__main__':

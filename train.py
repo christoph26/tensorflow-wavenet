@@ -270,7 +270,6 @@ def main():
 
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
     reader.start_threads(sess)
-    import ipdb; ipdb.set_trace()
 
     step = None
     try:
