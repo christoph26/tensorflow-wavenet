@@ -102,7 +102,7 @@ def save_pca_passed_freq(freq_dict, output_file):
 	Input file = frequency file
 	'''
 	pca = Audio_PCA()
-	for key, data in freq_dict.iteritems():
+	for key, data in freq_dict.items():
 		pca.partial_fit(data)
 
 		if VERBOSE:
@@ -114,7 +114,7 @@ def save_pca_passed_freq(freq_dict, output_file):
 	h5f.create_dataset('pca/mean_', data=pca.mean_)
 	h5f.create_dataset('pca/components_', data=pca.components_)
 
-	for key, data in freq_dict.iteritems():
+	for key, data in freq_dict.items():
 		coeff = pca.transform(data)
 		h5f.create_dataset('coeff/{}'.format(key), data=coeff)
 
