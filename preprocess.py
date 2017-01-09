@@ -48,15 +48,26 @@ def freq_extraction(data):
 	return freq
 
 def save_frequencies(input_file, output_file):
-	h5f = h5py.File(output_file, 'w')
-	for key, data in load_npz(input_file):#load_musicnet(input_file):
-		freq = freq_extraction(data)
-		h5f.create_dataset(key, data=freq)
+	if output_file is None:
+		output_dict = {}
+		for key, data in load_npz(input_file):  # load_musicnet(input_file):
+			freq = freq_extraction(data)
+			output_dict[key] = freq
+			if VERBOSE:
+				print("frequencies of file {} extracted ({})".format(key, len(data)))
 		if VERBOSE:
-			print("frequencies of file {} extracted ({})".format(key, len(data)))
-	h5f.close()
-	if VERBOSE:
-		print("frequency extraction done")
+			print("frequency extraction done")
+		return output_dict
+	else:
+		h5f = h5py.File(output_file, 'w')
+		for key, data in load_npz(input_file):#load_musicnet(input_file):
+			freq = freq_extraction(data)
+			h5f.create_dataset(key, data=freq)
+			if VERBOSE:
+				print("frequencies of file {} extracted ({})".format(key, len(data)))
+		h5f.close()
+		if VERBOSE:
+			print("frequency extraction done")
 
 def save_pca(input_file, output_file):
 	'''
@@ -85,6 +96,36 @@ def save_pca(input_file, output_file):
 	if VERBOSE:
 		print("pca coefficients generation done")
 	h5f.close()
+
+def save_pca_passed_freq(freq_dict, output_file):
+	'''
+	Input file = frequency file
+	'''
+	pca = Audio_PCA()
+	for key, data in freq_dict.iteritems():
+		pca.partial_fit(data)
+
+		if VERBOSE:
+			print("pca of file {} fitted".format(key))
+
+	if VERBOSE:
+		print("pca fitting done")
+	h5f = h5py.File(output_file, 'w')
+	h5f.create_dataset('pca/mean_', data=pca.mean_)
+	h5f.create_dataset('pca/components_', data=pca.components_)
+
+	for key, data in freq_dict.iteritems():
+		coeff = pca.transform(data)
+		h5f.create_dataset('coeff/{}'.format(key), data=coeff)
+
+		if VERBOSE:
+			print("pca coefficients of file {} generated".format(key))
+
+	if VERBOSE:
+		print("pca coefficients generation done")
+	h5f.close()
+
+
 
 class Audio_PCA(IncrementalPCA):
 	def __init__(self):
@@ -171,10 +212,6 @@ def load_freq(input, output_file=None):
 
 
 def pca_incremental_fit(freq):
-	    
-
-	import ipdb; ipdb.set_trace()
-
 	return data
 
 def load_npz(filename):
@@ -202,8 +239,8 @@ def preprocess(data_file, freq_file=None, pca_file=None):
 	if not pca_file:
 		pca_file = data_file[:-4]+"_pca.h5"
 
-	save_frequencies(data_file, freq_file)
-	save_pca(freq_file, pca_file)
+	freq_dict = save_frequencies(data_file, None)#freq_file)
+	save_pca_passed_freq(freq_dict, pca_file)#save_pca(freq_file, pca_file)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
