@@ -105,7 +105,7 @@ class AudioReader(object):
         # TODO Find a better way to check this.
         # Checking inside the AudioReader's thread makes it hard to terminate
         # the execution of the script, so we do it in the constructor for now.
-        if not find_files(audio_dir, pattern="*_pca.h5"):
+        if not find_files(audio_dir, pattern="*_pca_normalized.h5"):
             raise ValueError("No audio files found in '{}'.".format(audio_dir))
 
     def dequeue(self, num_elements):
