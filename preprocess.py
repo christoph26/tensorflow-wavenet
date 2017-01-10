@@ -50,7 +50,7 @@ def freq_extraction(data):
 def save_frequencies(input_file, output_file):
 	if output_file is None:
 		output_dict = {}
-		for key, data in load_npz(input_file):  # load_musicnet(input_file):
+		for key, data in load_musicnet(input_file):#load_npz(input_file):  # l
 			freq = freq_extraction(data)
 			output_dict[key] = freq
 			if VERBOSE:
