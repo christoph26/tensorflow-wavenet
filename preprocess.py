@@ -111,7 +111,7 @@ def preprocess(data_file, freq_file):
 	#calculate mean an variance
 	all_freqs = []
 	for key in freq_dict:
-		all_freqs += freq_dict[key].tolist()
+		all_freqs = np.concatenate((all_freqs, freq_dict[key]))
 	mean = np.mean(all_freqs)
 	var = np.var(all_freqs)
 
