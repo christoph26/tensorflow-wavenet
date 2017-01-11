@@ -30,9 +30,7 @@ def trim_silence(audio, threshold):
 	return audio[indices[0]:indices[-1]] if indices.size else audio[0:0]
 
 def freq_extraction(data):
-	# coeffs/second = coeff_per_window * wps
 	data = trim_silence(data, silence_th)
-
 	data = data.copy()
 
 	freq_length = int(np.ceil((len(data)-window_size)/stride))+1
@@ -44,7 +42,7 @@ def freq_extraction(data):
 		Xs = fft(data[i*stride:i*stride+window_size])
 		freq[i,:] = Xs[:crop_freq_th]
 
-	return freq
+	return freq.flatten()
 
 def calculate_frequencies(input_file):
 	output_dict = {}
@@ -58,15 +56,13 @@ def calculate_frequencies(input_file):
 		print("frequency extraction done")
 	return output_dict
 
-def load_freq(input, output_file=None):
-	gen = load_h5f(input) if type(input) == str else dict_to_gen(input)
+def load_freq(input, output_file):
+	generated_data = load_h5f(input)
 
-	if output_file:
-		h5f = h5py.File(output_file, 'w')
-	else:
-		ret = dict()
+	h5f = h5py.File(output_file, 'w')
 
-	for key, freq in gen:
+
+	for key, freq in generated_data:
 		Xs_red = np.zeros(freq.shape[0]*stride+window_size)
 		for i in range(freq.shape[0]):
 			Xs = np.zeros(window_size, dtype=complex)
