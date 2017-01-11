@@ -183,8 +183,8 @@ def main():
                            quantization_channels)
         waveform = sess.run(seed).tolist()
     else:
-        #waveform = np.random.randint(quantization_channels, size=(1,)).tolist()
-        waveform = np.zeros((1,quantization_channels)).tolist()
+        waveform = np.random(quantization_channels, size=(1,)).tolist()
+        #waveform = np.zeros((1,quantization_channels)).tolist()
 
     if args.fast_generation and args.pca_seed:
         # When using the incremental generation, we need to
