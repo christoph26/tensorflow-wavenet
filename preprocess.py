@@ -56,19 +56,24 @@ def calculate_frequencies(input_file):
 		print("frequency extraction done")
 	return output_dict
 
-def load_freq(input, output_file):
-	generated_data = load_h5f(input)
+def load_freq(generated_input):
 
-	h5f = h5py.File(output_file, 'w')
+	for i in xrange(generated_input.shape[0]/stride):
+		Xs = np.zeros(window_size, dtype=complex)
+	gen = load_h5f(input) if type(input) == str else dict_to_gen(input)
 
+	if output_file:
+		h5f = h5py.File(output_file, 'w')
+	else:
+		ret = dict()
 
-	for key, freq in generated_data:
-		Xs_red = np.zeros(freq.shape[0]*stride+window_size)
+	for key, freq in gen:
+		Xs_red = np.zeros(freq.shape[0] * stride + window_size)
 		for i in range(freq.shape[0]):
 			Xs = np.zeros(window_size, dtype=complex)
 			Xs[:crop_freq_th] = freq[i]
-			Xs[-crop_freq_th+1:] = freq[i, 1:][::-1]
-			Xs_red[i*stride:i*stride+window_size] += np.real(np.fft.ifft(Xs))
+			Xs[-crop_freq_th + 1:] = freq[i, 1:][::-1]
+			Xs_red[i * stride:i * stride + window_size] += np.real(np.fft.ifft(Xs))
 
 		if output_file:
 			h5f.create_dataset(key, data=Xs_red)
@@ -77,10 +82,6 @@ def load_freq(input, output_file):
 		if VERBOSE:
 			print("frequencies of file {} converted into audio signal".format(key))
 
-	if output_file:
-		h5f.close()
-	else:
-		return ret
 
 def load_npz(filename):
 	data = np.load(open(filename, 'rb'), encoding='bytes')
@@ -110,7 +111,7 @@ def preprocess(data_file, freq_file):
 	#calculate mean an variance
 	all_freqs = []
 	for key in freq_dict:
-		all_freqs += freq_dict[key]
+		all_freqs += freq_dict[key].tolist()
 	mean = np.mean(all_freqs)
 	var = np.var(all_freqs)
 
