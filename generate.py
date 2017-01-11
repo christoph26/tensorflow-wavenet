@@ -183,7 +183,7 @@ def main():
                            quantization_channels)
         waveform = sess.run(seed).tolist()
     else:
-        waveform = np.random.random((1, quantization_channels)).tolist()
+        waveform = np.random.random((1, quantization_channels))
         #waveform = np.zeros((1,quantization_channels)).tolist()
 
     if args.fast_generation and args.pca_seed:
