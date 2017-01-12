@@ -9,6 +9,8 @@ import numpy as np
 import tensorflow as tf
 
 import csv
+DATA_DIM = 300
+
 
 def find_files(directory, pattern='*.wav'):
     '''Recursively finds all files matching the pattern.'''
@@ -99,7 +101,7 @@ class AudioReader(object):
         self.sample_placeholder = tf.placeholder(dtype=tf.float32, shape=None)
         self.queue = tf.PaddingFIFOQueue(queue_size,
                                          ['float32'],
-                                         shapes=[(None, 100)])
+                                         shapes=[(None, DATA_DIM)])
         self.enqueue = self.queue.enqueue([self.sample_placeholder])
 
         # TODO Find a better way to check this.

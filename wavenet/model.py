@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from .ops import causal_conv, mu_law_encode
 
+DATA_DIM = 300
 
 def create_variable(name, shape):
     '''Create a convolution filter variable with the specified name and shape,
@@ -433,7 +434,7 @@ class WaveNetModel(object):
             else:
                 #encoded = self._one_hot(waveform)
                 #New: Take input as it is
-                encoded = tf.reshape(waveform, [1, -1, 100])
+                encoded = tf.reshape(waveform, [1, -1, DATA_DIM])
 
 
             raw_output = self._create_network(encoded)
