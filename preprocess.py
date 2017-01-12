@@ -46,9 +46,9 @@ def freq_extraction(data):
 
 	return freq.flatten()
 
-def calculate_frequencies(data_dict):
+def calculate_frequencies(input_data):
 	output_dict = {}
-	for key, data in data_dict:
+	for key, data in input_data:
 		freq = freq_extraction(data)
 		freq_real = np.concatenate((freq.real, freq.imag))
 		output_dict[key] = freq_real
@@ -93,44 +93,41 @@ def load_npz(filename):
 		print("reading file {}".format(key))
 		yield key, data[key][0].astype("float32")
 
-def load_musicnet(filename):
-	f = h5py.File(filename, 'r')
-	dict = {}
-	for key in f:
-		dict[key] = f[key]['data'].value
-	return dict
-
-def load_h5f(filename):
-	f = h5py.File(filename, 'r')
-	dict = {}
-	for key in f:
-		dict[key] = f[key].value
-	return dict
-
-def preprocess(data_file, freq_file, filter_piano):
-	if not freq_file:
-		freq_file = data_file[:-3] + "_frequencies.h5"
-
-	data_dict = load_musicnet(data_file)
-
+def load_musicnet(filename, filter_piano=False):
 	if filter_piano:
 		#Get all ids with Piano music
 		valid_keys = []
-		if os.path.isfile(data_file[:-3] + "_metadata.csv"):
-			with open(data_file[:-3] + "_metadata.csv", 'r') as f:
+		if os.path.isfile(filename[:-3] + "_metadata.csv"):
+			with open(filename[:-3] + "_metadata.csv", 'r') as f:
 				reader = csv.reader(f)
 				for row in reader:
 					if row[2].find("Piano") >= 0:
 						valid_keys.append(row[0])
 		else:
 			print("Metadata file could not be found.")
-		#filter data
-		for key in data_dict:
-			if not (key in valid_keys):
-				del data_dict[key]
-				print("Deleted data with key "+key)
 
-	freq_dict = calculate_frequencies(data_dict)
+	f = h5py.File(filename, 'r')
+	for key in f:
+		if filter_piano:
+			if key in valid_keys:
+				yield key, f[key].value
+			else:
+				print("Skipped key" + key)
+		else:
+			yield key, f[key].value
+
+def load_h5f(filename):
+	f = h5py.File(filename, 'r')
+	for key in f:
+		yield key, f[key].value
+
+def preprocess(data_file, freq_file, filter_piano):
+	if not freq_file:
+		freq_file = data_file[:-3] + "_frequencies.h5"
+
+	input_data = load_musicnet(data_file, filter_piano)
+
+	freq_dict = calculate_frequencies(input_data)
 
 	#calculate mean an variance
 	all_freqs = []
