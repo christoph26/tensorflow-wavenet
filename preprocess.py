@@ -101,7 +101,7 @@ def load_musicnet(filename, filter_piano=False):
 			with open(filename[:-3] + "_metadata.csv", 'r') as f:
 				reader = csv.reader(f)
 				for row in reader:
-					if row[2].find("Piano") >= 0:
+					if row[4].find("Piano") >= 0:
 						valid_keys.append("id_"+str(row[0]))
 		else:
 			print("Metadata file could not be found.")
@@ -147,6 +147,7 @@ def preprocess(data_file, freq_file, filter_piano):
 		freq_dict[key] -= mean
 		freq_dict[key] /= var
 		h5f.create_dataset('coeff/{}'.format(key), data=freq_dict[key])
+		print("Saved file "+str(key))
 
 	h5f.close()
 	if VERBOSE:
