@@ -104,7 +104,7 @@ def load_h5f(filename):
 	for key in f:
 		yield key, f[key].value
 
-def preprocess(data_file, freq_file, filter_piano=False):
+def preprocess(data_file, freq_file, filter_piano):
 	if not freq_file:
 		freq_file = data_file[:-3] + "_frequencies.h5"
 
@@ -156,8 +156,9 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--data_file", type=str, required=True, help="Path of the *.npz data file")
 	parser.add_argument("--freq_file", type=str, default=None, help="Path of the frequencies output file")
+	parser.add_argument('--filter_piano', type=bool, default=False, help='Should a metadata file be used to filter piano pieces.')
 	args = parser.parse_args()
 
-	preprocess(args.data_file, args.freq_file)
+	preprocess(args.data_file, args.freq_file, args.filter_piano)
 
 	#np.save(output_file, proc_data)
