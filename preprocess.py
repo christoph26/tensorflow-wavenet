@@ -110,7 +110,7 @@ def preprocess(data_file, freq_file, filter_piano):
 	if not freq_file:
 		freq_file = data_file[:-3] + "_frequencies.h5"
 
-	data_dict = load_musicnet(data_file)
+	data_dict = load_h5f(data_file)
 
 	if filter_piano:
 		#Get all ids with Piano music
