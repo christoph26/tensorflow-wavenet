@@ -6,6 +6,8 @@ import intervaltree
 from sklearn.decomposition import IncrementalPCA
 import h5py
 import argparse
+import os
+import csv
 
 fs = 44100
 crop_freq_th = 150
@@ -44,9 +46,9 @@ def freq_extraction(data):
 
 	return freq.flatten()
 
-def calculate_frequencies(input_file):
+def calculate_frequencies(data_dict):
 	output_dict = {}
-	for key, data in load_musicnet(input_file):#load_npz(input_file):  # l
+	for key, data in data_dict:
 		freq = freq_extraction(data)
 		freq_real = np.concatenate((freq.real, freq.imag))
 		output_dict[key] = freq_real
@@ -102,11 +104,30 @@ def load_h5f(filename):
 	for key in f:
 		yield key, f[key].value
 
-def preprocess(data_file, freq_file):
+def preprocess(data_file, freq_file, filter_piano=False):
 	if not freq_file:
 		freq_file = data_file[:-3] + "_frequencies.h5"
 
-	freq_dict = calculate_frequencies(data_file)
+	data_dict = load_musicnet(data_file)
+
+	if filter_piano:
+		#Get all ids with Piano music
+		valid_keys = []
+		if os.path.isfile(data_file[:-3] + "_metadata.csv"):
+			with open(data_file[:-3] + "_metadata.csv", 'r') as f:
+				reader = csv.reader(f)
+				for row in reader:
+					if row[2].find("Piano") >= 0:
+						valid_keys.append(row[0])
+		else:
+			print("Methadata file could not be found.")
+		#filter data
+		for key in data_dict:
+			if not key in valid_keys:
+				del data_dict[key]
+				print("Deleted data with key "+key)
+
+	freq_dict = calculate_frequencies(data_dict)
 
 	#calculate mean an variance
 	all_freqs = []
@@ -122,7 +143,7 @@ def preprocess(data_file, freq_file):
 	if VERBOSE:
 		print("Calculated mean and variance. Starting normalization.")
 
-	for key, data in freq_dict:
+	for key in freq_dict:
 		freq_dict[key] -= mean
 		freq_dict[key] /= var
 		h5f.create_dataset('coeff/{}'.format(key), data=freq_dict[key])
