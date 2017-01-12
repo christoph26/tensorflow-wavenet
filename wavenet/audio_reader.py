@@ -60,7 +60,7 @@ def load_npz_audio(directory, sample_rate):
             yield X, '{}_{}'.format(filename, file_i)
 
 def load_pca_audio(directory, sample_rate):
-    files = find_files(directory, pattern='*_pca.h5')
+    files = find_files(directory, pattern='*.h5')
     for filename in files:
         h5f = h5py.File(filename, 'r')
         keys = h5f['coeff']
