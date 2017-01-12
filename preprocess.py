@@ -44,13 +44,13 @@ def freq_extraction(data):
 		Xs = fft(data[i*window_size:i*window_size+window_size])
 		freq[i,:] = Xs[:crop_freq_th]
 
-	return freq.flatten()
+	return freq
 
 def calculate_frequencies(input_data):
 	output_dict = {}
 	for key, data in input_data:
 		freq = freq_extraction(data)
-		freq_real = np.concatenate((freq.real, freq.imag))
+		freq_real = np.concatenate((freq.real, freq.imag), axis=1)
 		output_dict[key] = freq_real
 		if VERBOSE:
 			print("frequencies of file {} extracted ({})".format(key, len(data)))
@@ -117,9 +117,9 @@ def preprocess(data_file, freq_file, filter_piano):
 	#calculate mean an variance
 	all_freqs = []
 	for key in freq_dict:
-		all_freqs = np.concatenate((all_freqs, freq_dict[key]))
-	mean = np.mean(all_freqs)
-	var = np.var(all_freqs)
+		all_freqs = np.concatenate((all_freqs, freq_dict[key]), axis=0)
+	mean = np.mean(all_freqs, axis=0)
+	var = np.var(all_freqs, axis=0)
 
 	h5f = h5py.File(freq_file, 'w')
 	h5f.create_dataset('normalize/mean', data=mean)
@@ -129,8 +129,8 @@ def preprocess(data_file, freq_file, filter_piano):
 		print("Calculated mean and variance. Starting normalization.")
 
 	for key in freq_dict:
-		freq_dict[key] -= mean
-		freq_dict[key] /= var
+		freq_dict[key] = freq_dict[key] - mean
+		freq_dict[key] = freq_dict[key] / var
 		h5f.create_dataset('coeff/{}'.format(key), data=freq_dict[key])
 		print("Saved file "+str(key))
 
