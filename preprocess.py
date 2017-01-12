@@ -115,7 +115,7 @@ def preprocess(data_file, freq_file, filter_piano):
 	freq_dict = calculate_frequencies(input_data)
 
 	#calculate mean an variance
-	all_freqs = []
+	all_freqs = np.array([]).reshape((-1,300))
 	for key in freq_dict:
 		all_freqs = np.concatenate((all_freqs, freq_dict[key]), axis=0)
 	mean = np.mean(all_freqs, axis=0)
