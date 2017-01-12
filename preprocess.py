@@ -12,13 +12,13 @@ import csv
 fs = 44100
 crop_freq_th = 150
 window_size = 2048  # 2048-sample fourier windows
-stride = window_size        # 512 samples between windows
+#stride = window_size        # 512 samples between windows
 
 coeff_per_window = 100
 
 silence_th = 0.2
 
-wps = fs/float(stride) # ~86 windows/second (with a fs of 16000)
+wps = fs/float(window_size) # ~86 windows/second (with a fs of 16000)
 
 VERBOSE = True
 
@@ -35,13 +35,13 @@ def freq_extraction(data):
 	data = trim_silence(data, silence_th)
 	data = data.copy()
 
-	freq_length = int(np.ceil((len(data)-window_size)/stride))+1
-	data.resize(int((freq_length-1)*stride+window_size))
+	freq_length = int(np.ceil((len(data)-window_size)/window_size))+1
+	data.resize(int((freq_length-1)*window_size+window_size))
 
 	freq = np.empty([freq_length, crop_freq_th], dtype=complex)
 
 	for i in range(freq.shape[0]):
-		Xs = fft(data[i*stride:i*stride+window_size])
+		Xs = fft(data[i*window_size:i*window_size+window_size])
 		freq[i,:] = Xs[:crop_freq_th]
 
 	return freq.flatten()
@@ -59,30 +59,15 @@ def calculate_frequencies(input_data):
 	return output_dict
 
 def load_freq(generated_input):
+	num_iffts = generated_input.shape[0]/(window_size*2)
+	output = np.empty((num_iffts,window_size))
 
-	for i in xrange(generated_input.shape[0]/stride):
+	for i in xrange(num_iffts):
 		Xs = np.zeros(window_size, dtype=complex)
-	gen = load_h5f(input) if type(input) == str else dict_to_gen(input)
+		Xs += generated_input[i*2*window_size:i*2*window_size+window_size] + 1j * generated_input[i*2*window_size+window_size:i*2*window_size+2*window_size]
+		output[i] = np.real(np.fft.ifft(Xs))
 
-	if output_file:
-		h5f = h5py.File(output_file, 'w')
-	else:
-		ret = dict()
-
-	for key, freq in gen:
-		Xs_red = np.zeros(freq.shape[0] * stride + window_size)
-		for i in range(freq.shape[0]):
-			Xs = np.zeros(window_size, dtype=complex)
-			Xs[:crop_freq_th] = freq[i]
-			Xs[-crop_freq_th + 1:] = freq[i, 1:][::-1]
-			Xs_red[i * stride:i * stride + window_size] += np.real(np.fft.ifft(Xs))
-
-		if output_file:
-			h5f.create_dataset(key, data=Xs_red)
-		else:
-			ret[key] = Xs_red
-		if VERBOSE:
-			print("frequencies of file {} converted into audio signal".format(key))
+	return output.flatten()
 
 
 def load_npz(filename):
