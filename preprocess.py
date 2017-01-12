@@ -9,9 +9,8 @@ import argparse
 
 fs = 44100
 crop_freq_th = 150
-window_size = 2048
 window_size = 2048  # 2048-sample fourier windows
-stride = 512        # 512 samples between windows
+stride = window_size #samples between windows
 
 coeff_per_window = 100
 
@@ -47,10 +46,10 @@ def freq_extraction(data):
 
 	return freq
 
-def save_frequencies(input_file, output_file):
+def save_frequencies(input_file, output_file, filter_piano):
 	if output_file is None:
 		output_dict = {}
-		for key, data in load_musicnet(input_file):#load_npz(input_file):  # l
+		for key, data in load_musicnet(input_file, filter_piano):
 			freq = freq_extraction(data)
 			output_dict[key] = freq
 			if VERBOSE:
@@ -222,18 +221,35 @@ def load_npz(filename):
 		print("reading file {}".format(key))
 		yield key, data[key][0].astype("float32")
 
-def load_musicnet(filename):
+def load_musicnet(filename, filter_piano=False):
+	if filter_piano:
+		#Get all ids with Piano music
+		valid_keys = []
+		if os.path.isfile(filename[:-3] + "_metadata.csv"):
+			with open(filename[:-3] + "_metadata.csv", 'r') as f:
+				reader = csv.reader(f)
+				for row in reader:
+					if row[4].find("Piano") >= 0:
+						valid_keys.append("id_"+str(row[0]))
+		else:
+			print("Metadata file could not be found.")
+
 	f = h5py.File(filename, 'r')
 	for key in f:
-		yield key, f[key]['data'].value
-
+		if filter_piano:
+			if key in valid_keys:
+				yield key, f[key]['data'].value
+			else:
+				print("Skipped key" + key)
+		else:
+			yield key, f[key]['data'].value
 
 def load_h5f(filename):
 	f = h5py.File(filename, 'r')
 	for key in f:
 		yield key, f[key].value
 
-def preprocess(data_file, freq_file=None, pca_file=None):
+def preprocess(data_file, freq_file, pca_file, filter_piano):
 	if not freq_file:
 		freq_file = data_file[:-4]+"_freq.h5"
 	if not pca_file:
@@ -247,14 +263,9 @@ if __name__ == '__main__':
 	parser.add_argument("--data_file", type=str, required=True, help="Path of the *.npz data file")
 	parser.add_argument("--freq_file", type=str, default=None, help="Path of the frequencies output")
 	parser.add_argument("--pca_file", type=str, default=None, help="Path of the pca output file")
+	parser.add_argument('--filter_piano', type=bool, default=False, help='Should a metadata file be used to filter piano pieces.')
 	args = parser.parse_args()
 
-	#h5f = h5py.File(output_file, 'w')
-	#for key, data in load_npz(args.data_file):
-	#	processed_data = preprocess(data)
-	#	h5f.create_dataset(key, data=processed_data)
-	#h5f.close()
-
-	preprocess(args.data_file, args.freq_file, args.pca_file)
+	preprocess(args.data_file, args.freq_file, args.filter_piano)
 
 	#np.save(output_file, proc_data)
