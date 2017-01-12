@@ -101,8 +101,10 @@ def load_musicnet(filename):
 
 def load_h5f(filename):
 	f = h5py.File(filename, 'r')
+	dict = {}
 	for key in f:
-		yield key, f[key].value
+		dict[key] = f[key].value
+	return dict
 
 def preprocess(data_file, freq_file, filter_piano):
 	if not freq_file:
@@ -124,7 +126,7 @@ def preprocess(data_file, freq_file, filter_piano):
 		#filter data
 		for key in data_dict:
 			if not (key in valid_keys):
-				data_dict.pop(key)
+				del data_dict[key]
 				print("Deleted data with key "+key)
 
 	freq_dict = calculate_frequencies(data_dict)
