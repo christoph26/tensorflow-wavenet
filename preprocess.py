@@ -255,8 +255,8 @@ def preprocess(data_file, freq_file, pca_file, filter_piano):
 	if not pca_file:
 		pca_file = data_file[:-4]+"_pca.h5"
 
-	freq_dict = save_frequencies(data_file, None)#freq_file)
-	save_pca_passed_freq(freq_dict, pca_file)#save_pca(freq_file, pca_file)
+	freq_dict = save_frequencies(data_file, None, filter_piano)
+	save_pca_passed_freq(freq_dict, pca_file)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -266,6 +266,6 @@ if __name__ == '__main__':
 	parser.add_argument('--filter_piano', type=bool, default=False, help='Should a metadata file be used to filter piano pieces.')
 	args = parser.parse_args()
 
-	preprocess(args.data_file, args.freq_file, args.filter_piano)
+	preprocess(args.data_file, args.freq_file, args.pca_file, args.filter_piano)
 
 	#np.save(output_file, proc_data)
