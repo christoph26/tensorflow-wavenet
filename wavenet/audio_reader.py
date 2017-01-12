@@ -68,7 +68,7 @@ def load_pca_audio(directory, sample_rate):
         keys = h5f['coeff']
         for file_i in keys:
             X = h5f['coeff/{}'.format(file_i)].value
-            yield X, '{}_{}'.format(filename, file_i)
+            yield X.reshape((-1,DATA_DIM)), '{}_{}'.format(filename, file_i)
 
 
 def trim_silence(audio, threshold):
