@@ -102,7 +102,7 @@ def load_musicnet(filename, filter_piano=False):
 				reader = csv.reader(f)
 				for row in reader:
 					if row[2].find("Piano") >= 0:
-						valid_keys.append(row[0])
+						valid_keys.append("id_"+str(row[0]))
 		else:
 			print("Metadata file could not be found.")
 
