@@ -123,8 +123,8 @@ def preprocess(data_file, freq_file, filter_piano):
 			print("Methadata file could not be found.")
 		#filter data
 		for key in data_dict:
-			if not key in valid_keys:
-				del data_dict[key]
+			if not (key in valid_keys):
+				data_dict.pop(key)
 				print("Deleted data with key "+key)
 
 	freq_dict = calculate_frequencies(data_dict)
