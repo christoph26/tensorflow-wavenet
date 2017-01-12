@@ -95,9 +95,10 @@ def load_npz(filename):
 
 def load_musicnet(filename):
 	f = h5py.File(filename, 'r')
+	dict = {}
 	for key in f:
-		yield key, f[key]['data'].value
-
+		dict[key] = f[key]['data'].value
+	return dict
 
 def load_h5f(filename):
 	f = h5py.File(filename, 'r')
@@ -110,7 +111,7 @@ def preprocess(data_file, freq_file, filter_piano):
 	if not freq_file:
 		freq_file = data_file[:-3] + "_frequencies.h5"
 
-	data_dict = load_h5f(data_file)
+	data_dict = load_musicnet(data_file)
 
 	if filter_piano:
 		#Get all ids with Piano music
@@ -122,7 +123,7 @@ def preprocess(data_file, freq_file, filter_piano):
 					if row[2].find("Piano") >= 0:
 						valid_keys.append(row[0])
 		else:
-			print("Methadata file could not be found.")
+			print("Metadata file could not be found.")
 		#filter data
 		for key in data_dict:
 			if not (key in valid_keys):
