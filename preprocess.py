@@ -110,11 +110,11 @@ def load_musicnet(filename, filter_piano=False):
 	for key in f:
 		if filter_piano:
 			if key in valid_keys:
-				yield key, f[key].value
+				yield key, f[key]['data'].value
 			else:
 				print("Skipped key" + key)
 		else:
-			yield key, f[key].value
+			yield key, f[key]['data'].value
 
 def load_h5f(filename):
 	f = h5py.File(filename, 'r')
