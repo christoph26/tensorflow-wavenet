@@ -115,15 +115,35 @@ def save_pca_passed_freq(freq_dict, output_file):
 	h5f.create_dataset('pca/mean_', data=pca.mean_)
 	h5f.create_dataset('pca/components_', data=pca.components_)
 
+	pca_dict= {}
 	for key, data in freq_dict.items():
 		coeff = pca.transform(data)
-		h5f.create_dataset('coeff/{}'.format(key), data=coeff)
-
+		pca_dict[key] = coeff
 		if VERBOSE:
 			print("pca coefficients of file {} generated".format(key))
 
 	if VERBOSE:
 		print("pca coefficients generation done")
+
+	# calculate mean an variance
+	all_pca = np.array([]).reshape((-1,coeff_per_window))
+	for key in pca_dict:
+		all_pca = np.concatenate((all_pca, pca_dict[key]), axis=0)
+	mean = np.mean(all_pca, axis=0)
+	var = np.var(all_pca, axis=0)
+
+	h5f.create_dataset('normalize/mean', data=mean)
+	h5f.create_dataset('normalize/var', data=var)
+
+	if VERBOSE:
+		print("Calculated mean and variance. Starting normalization.")
+
+	for key in freq_dict:
+		pca_dict[key] = pca_dict[key] - mean
+		pca_dict[key] = pca_dict[key] / var
+		h5f.create_dataset('coeff/{}'.format(key), data=pca_dict[key])
+		print("Saved file " + str(key))
+
 	h5f.close()
 
 
