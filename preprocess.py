@@ -203,7 +203,7 @@ def dict_to_gen(d):
 	for key in d:
 		yield key, d[key]
 
-def load_freq(input, output_file=None):
+def load_freq(input, output_file=None, abs_value=False):
 	gen = load_h5f(input) if type(input) == str else dict_to_gen(input)
 
 	if output_file:
@@ -217,7 +217,10 @@ def load_freq(input, output_file=None):
 			Xs = np.zeros(window_size, dtype=complex)
 			Xs[:crop_freq_th] = freq[i]
 			Xs[-crop_freq_th+1:] = freq[i, 1:][::-1]
-			Xs_red[i*stride:i*stride+window_size] += np.real(np.fft.ifft(Xs))
+			if abs_value:
+				Xs_red[i * stride:i * stride + window_size] += np.abs(np.fft.ifft(Xs))
+			else:
+				Xs_red[i*stride:i*stride+window_size] += np.real(np.fft.ifft(Xs))
 
 		if output_file:
 			h5f.create_dataset(key, data=Xs_red)
