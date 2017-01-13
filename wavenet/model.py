@@ -505,7 +505,6 @@ class WaveNetModel(object):
             else:
                 network_input = encoded
 
-            print("Network-input: " +str(network_input))
             raw_output = self._create_network(network_input)
 
             with tf.name_scope('loss'):
@@ -517,13 +516,13 @@ class WaveNetModel(object):
 
                 prediction = tf.reshape(raw_output,
                                         [-1, self.quantization_channels])
-                print("prediction" + str(prediction))
                 #loss = tf.nn.softmax_cross_entropy_with_logits(
                 #    prediction,
                 #    tf.reshape(shifted, [-1, self.quantization_channels]))
                 loss = tf.square(prediction-tf.reshape(shifted, [-1, self.quantization_channels]))
                 #try out sum
-                reduced_loss = tf.reduce_mean(loss)
+                reduced_loss = tf.reduce_sum(loss)
+                #reduced_loss = tf.reduce_mean(loss)
 
                 tf.scalar_summary('loss', reduced_loss)
 
