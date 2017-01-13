@@ -140,7 +140,7 @@ def save_pca_passed_freq(freq_dict, output_file):
 
 	for key in freq_dict:
 		pca_dict[key] = pca_dict[key] - mean
-		pca_dict[key] = pca_dict[key] / var
+		pca_dict[key] = pca_dict[key] / (var / 15.0)
 		h5f.create_dataset('coeff/{}'.format(key), data=pca_dict[key])
 		print("Saved file " + str(key))
 
