@@ -68,19 +68,19 @@ def load_pca_audio(directory, sample_rate):
         h5f = h5py.File(filename, 'r')
         keys = h5f['coeff']
         for file_i in keys:
-            X = h5f['coeff/{}'.format(file_i)].value
+            X = h5f['coeff/{}'.format(file_i)].value *100.0 + 10
             #print("yield key "+str('coeff/{}'.format(file_i))+ " with value shape " + str(h5f['coeff/{}'.format(file_i)].value.shape))
             yield X, '{}_{}'.format(filename, file_i)
 
 
-def trim_silence(audio, threshold):
-    '''Removes silence at the beginning and end of a sample.'''
-    energy = librosa.feature.rmse(audio)
-    frames = np.nonzero(energy > threshold)
-    indices = librosa.core.frames_to_samples(frames)[1]
-
-    # Note: indices can be an empty array, if the whole audio was silence.
-    return audio[indices[0]:indices[-1]] if indices.size else audio[0:0]
+#def trim_silence(audio, threshold):
+#    '''Removes silence at the beginning and end of a sample.'''
+#    energy = librosa.feature.rmse(audio)
+#    frames = np.nonzero(energy > threshold)
+#    indices = librosa.core.frames_to_samples(frames)[1]#
+#
+#    # Note: indices can be an empty array, if the whole audio was silence.
+#    return audio[indices[0]:indices[-1]] if indices.size else audio[0:0]
 
 
 class AudioReader(object):
