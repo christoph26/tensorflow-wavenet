@@ -12,7 +12,7 @@ import csv
 fs = 44100
 crop_freq_th = 150
 window_size = 2048  # 2048-sample fourier windows
-stride = window_size #samples between windows
+stride = 512 #samples between windows
 
 coeff_per_window = 100
 
@@ -140,7 +140,7 @@ def save_pca_passed_freq(freq_dict, output_file):
 
 	for key in freq_dict:
 		pca_dict[key] = pca_dict[key] - mean
-		pca_dict[key] = pca_dict[key] / (var / 15.0)
+		pca_dict[key] = pca_dict[key] / (var / 10.0)
 		h5f.create_dataset('coeff/{}'.format(key), data=pca_dict[key])
 
 	h5f.close()
