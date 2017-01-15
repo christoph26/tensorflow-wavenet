@@ -5,7 +5,7 @@
 \usepackage{url}
 \usepackage{graphicx}	% For figure environment
 \usepackage{color}
-
+\usepackage{amsmath}
 
 \begin{document}
 \title{Applying WaveNet on frequency data}
@@ -38,22 +38,27 @@ In 2016 \cite{wavenet} introduced WaveNet, a generative model for raw audio achi
 The aim this paper is to enhance the WaveNet architecture and apply it to a more feature-oriented representation of input data.. Instead of performing a classification task on raw audio, the network is adopted to operate on the frequencies of the audio data, processed by Fouier transformation.
 \textcolor{red}{Missing:\\-reference to github repo with code and results\\-Advantages/Changes by new achitecture\\-reference to the data used in the experiments}
 
+\section{Models and Methods}
+The following section describes the underlying model of the network used in the experiments of this paper. As core network the WaveNet architecture with a stack of dilated causal convolutional layers is taken. Hereupon, the data input layer is changed conceptually.
+\subsection{Data preprocessing}
+To extract frequencies, the raw audio data consisting of pressure measurements are divided into chunks of size 2048, which are then transformed into the frequency space using FFT. Therefrom, the first 150 coefficients are taken as dominant frequencies for the subsequent training. To ensure that audio features are transformed smoothly, two neighboring raw audio chunks overlap in a few samples, described by a variable $stride$. Equation \ref{eq:fft} summarized the frequency extraction of the $i^\textnormal{th}$ chunk compactly.
+\begin{multline}\label{eq:fft}
+\textnormal{frequencies\_coeffs}_i =
+FFT(\textnormal{inputData}[i \cdot stride:\\i \cdot stride+2048])[:150]
+\end{multline}
+
+Considering real and imaginary parts of the complex Fourier coefficients separately, each chunk of 2048 raw audio samples is transformed into 300 real frequency values.
+
+To decrease the dimensionality even further, principle component analysis is used to reduce these 300 frequencies to 100 values. These 100 coefficient are considered one tone and fed into the network as one time step. Whereas in the original WaveNet architecture, 16000 samples represented on second of audio, the adopted network only needs to process $16000/2048 \approx 8$ samples per second. However, this change infers a fundamentally different approach of audio training and generation, described in the next section. 
 
 
-At that
-point, it is important that the reader is able to reproduce your
-work~\cite{schwab00,wavelab,gentleman05}. This is why it is also
-important that if the work has a computational component, the software
-associated with producing the results are also made available in a
-useful form. Several guidelines for making your user's experience with
-your software as painless as possible is given in
-Section~\ref{sec:tips-software}.
+\textcolor{red}{Missing: Comparison/error plot of original data vs. preprocessed data} 
 
-Finally, we describe the rules for submission in the computational
-intelligence laboratory in Section~\ref{sec:cil}. 
-This brief guide is by no means sufficient, on its own, to
-make its reader an accomplished writer. The reader is urged to use the
-references to further improve his or her writing skills.
+
+\subsection{Network architecture and loss}
+Whereas the original WaveNet paper designed the network to perform a classification task, the adopted network aims to train and predict the frequencies of a audio sample directly. The network input during one time step is now not only one class describing the current tone, but a 100 dimensional vector representing the frequencies of the tone of time step in a compressed way. Similarly, the output of the network is no longer a softmax layer but also a 100 dimensional vector.
+
+This change in architecture also affects the loss during training. Instead of a softmax cross-entropy loss the adopted network uses the mean squared error as loss function during training.
 
 \section{The Structure of a Paper}
 \label{sec:structure-paper}
