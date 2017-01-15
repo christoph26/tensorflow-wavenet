@@ -4,13 +4,15 @@
 %\usepackage{balance}
 \usepackage{url}
 \usepackage{graphicx}	% For figure environment
+\usepackage{color}
 
 
 \begin{document}
-\title{Writing Scientific Papers and Software}
+\title{Applying WaveNet on frequency data}
 
 \author{
-  Cheng Soon Ong\\
+  Luzi Sennhauser\\
+  Christoph Dehner\\
   Department of Computer Science, ETH Zurich, Switzerland
 }
 
@@ -31,16 +33,12 @@
 
 \section{Introduction}
 
-The aim of writing a paper is to infect the mind of your reader with
-the brilliance of your idea~\cite{jones08}. 
-The hope is that after reading your
-paper, the audience will be convinced to try out your idea. In other
-words, it is the medium to transport the idea from your head to your
-reader's head. 
-In the following
-section, we show a common structure of scientific papers and briefly
-outline some tips for writing good papers in
-Section~\ref{sec:tips-writing}.
+In 2016 \cite{wavenet} introduced WaveNet, a generative model for raw audio achieving astonishing results in learning sound features and generating smooth audio. Trained on piano music, new highly dynamic piano music varying in melody, volume and speed smoothly could be generated.
+
+The aim this paper is to enhance the WaveNet architecture and apply it to a more feature-oriented representation of input data.. Instead of performing a classification task on raw audio, the network is adopted to operate on the frequencies of the audio data, processed by Fouier transformation.
+\textcolor{red}{Missing:\\-reference to github repo with code and results\\-Advantages/Changes by new achitecture\\-reference to the data used in the experiments}
+
+
 
 At that
 point, it is important that the reader is able to reproduce your
