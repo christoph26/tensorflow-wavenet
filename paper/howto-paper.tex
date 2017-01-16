@@ -32,16 +32,15 @@
 \end{abstract}
 
 \section{Introduction}
-
-In 2016 \cite{wavenet} introduced WaveNet, a generative model for raw audio achieving astonishing results in learning sound features and generating smooth audio. Trained on piano music, new highly dynamic piano music varying in melody, volume and speed smoothly could be generated.
-
+In 2016, \cite{wavenet} introduced WaveNet, a generative model for raw audio achieving astonishing results in learning sound features and generating smooth audio. Trained on piano music, new highly dynamic piano music varying in melody, volume and speed smoothly could be generated.\\
 The aim this paper is to enhance the WaveNet architecture and apply it to a more feature-oriented representation of input data. Instead of performing a classification task on raw audio, the network is adopted to operate on the frequencies of the audio data, processed by Fouier transformation. In particular, the following topics are covered:
 \begin{itemize}
-\item Based on WaveNet from \cite{wavent} a network architecture to generate music is introduced operating on the frequencies of audio input.
+\item Based on WaveNet from \cite{wavenet} a network architecture to generate music is introduced operating on the frequencies of audio input.
 \item This new network is trained and evaluated on piano music from the MusicNet dataset. Furthermore, optimization approaches as data normalization and variations in preprocessing the data are included in the experiments.
 \item Results from the evaluation are analyzed in detail. In the context of the introduced network, advantages as well as weaknesses are discussed. 
 \end{itemize}
-\textcolor{red}{Missing:\\-reference to github repo with code and results\\-Advantages/Changes by new achitecture\\-reference to the data used in the experiments}
+As training data in the experiments, piano samples from the MusicNet dataset, a collection of 330 freely-licenced recordings of classical music are taken. The data is publicly available online \cite{musicnet}.\\
+The source code of the experiments can be found on GitHub.\footnote{\url{https://github.com/sennluzi/tensorflow-wavenet}}
 
 \section{Models and Methods}
 The following section describes the underlying model of the network used in the experiments of this paper. As core network the WaveNet architecture with a stack of dilated causal convolutional layers is taken. Hereupon, the data input layer is changed conceptually.
@@ -53,9 +52,7 @@ To extract frequencies, the raw audio data consisting of pressure measurements a
 \textnormal{frequencies\_coeffs}_i =
 FFT(\textnormal{inputData}[i \cdot stride:\\i \cdot stride+2048])[:150]
 \end{multline}
-
-Considering real and imaginary parts of the complex Fourier coefficients separately, each chunk of 2048 raw audio samples is transformed into 300 real frequency values.
-
+Considering real and imaginary parts of the complex Fourier coefficients separately, each chunk of 2048 raw audio samples is transformed into 300 real frequency values.\\
 To decrease the dimensionality even further, principle component analysis is used to reduce these 300 frequencies to 100 values. These 100 coefficient are considered one tone and fed into the network as one time step. Whereas in the original WaveNet architecture, 16000 samples represented on second of audio, the adopted network only needs to process $16000/2048 \approx 8$ samples per second. However, this change infers a fundamentally different approach of audio training and generation, described in the next section. 
 
 
@@ -63,8 +60,7 @@ To decrease the dimensionality even further, principle component analysis is use
 
 
 \subsection{Network architecture and loss}
-Whereas the original WaveNet paper designed the network to perform a classification task, the adopted network aims to train and predict the frequencies of a audio sample directly. The network input during one time step is now not only one class describing the current tone, but a 100 dimensional vector representing the frequencies of the tone of time step in a compressed way. Similarly, the output of the network is no longer a softmax layer but also a 100 dimensional vector.
-
+Whereas the original WaveNet paper designed the network to perform a classification task, the adopted network aims to train and predict the frequencies of a audio sample directly. The network input during one time step is now not only one class describing the current tone, but a 100 dimensional vector representing the frequencies of the tone of time step in a compressed way. Similarly, the output of the network is no longer a softmax layer but also a 100 dimensional vector.\\
 This change in architecture also affects the loss during training. Instead of a softmax cross-entropy loss the adopted network uses the mean squared error as loss function during training.
 
 \section{The Structure of a Paper}
