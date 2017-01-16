@@ -35,11 +35,18 @@
 
 In 2016 \cite{wavenet} introduced WaveNet, a generative model for raw audio achieving astonishing results in learning sound features and generating smooth audio. Trained on piano music, new highly dynamic piano music varying in melody, volume and speed smoothly could be generated.
 
-The aim this paper is to enhance the WaveNet architecture and apply it to a more feature-oriented representation of input data.. Instead of performing a classification task on raw audio, the network is adopted to operate on the frequencies of the audio data, processed by Fouier transformation.
+The aim this paper is to enhance the WaveNet architecture and apply it to a more feature-oriented representation of input data. Instead of performing a classification task on raw audio, the network is adopted to operate on the frequencies of the audio data, processed by Fouier transformation. In particular, the following topics are covered:
+\begin{itemize}
+\item Based on WaveNet from \cite{wavent} a network architecture to generate music is introduced operating on the frequencies of audio input.
+\item This new network is trained and evaluated on piano music from the MusicNet dataset. Furthermore, optimization approaches as data normalization and variations in preprocessing the data are included in the experiments.
+\item Results from the evaluation are analyzed in detail. In the context of the introduced network, advantages as well as weaknesses are discussed. 
+\end{itemize}
 \textcolor{red}{Missing:\\-reference to github repo with code and results\\-Advantages/Changes by new achitecture\\-reference to the data used in the experiments}
 
 \section{Models and Methods}
 The following section describes the underlying model of the network used in the experiments of this paper. As core network the WaveNet architecture with a stack of dilated causal convolutional layers is taken. Hereupon, the data input layer is changed conceptually.
+\subsection{WaveNet architecture}
+\textcolor{red}{rough description of wavenet architecture and specification used during the experiments}
 \subsection{Data preprocessing}
 To extract frequencies, the raw audio data consisting of pressure measurements are divided into chunks of size 2048, which are then transformed into the frequency space using FFT. Therefrom, the first 150 coefficients are taken as dominant frequencies for the subsequent training. To ensure that audio features are transformed smoothly, two neighboring raw audio chunks overlap in a few samples, described by a variable $stride$. Equation \ref{eq:fft} summarized the frequency extraction of the $i^\textnormal{th}$ chunk compactly.
 \begin{multline}\label{eq:fft}
