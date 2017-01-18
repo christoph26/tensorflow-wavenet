@@ -43,8 +43,21 @@ As training data in the experiments, piano samples from the MusicNet dataset, a 
 The source code of the experiments can be found on GitHub.\footnote{\url{https://github.com/sennluzi/tensorflow-wavenet}}
 
 \section{Models and Methods}
-The following section describes the underlying model of the network used in the experiments of this paper. As core network the WaveNet architecture with a stack of dilated causal convolutional layers is taken. Hereupon, the data input layer is changed conceptually.
+The following section describes the underlying model of the network used in the experiments of this paper. As core network the WaveNet architecture with a stack of dilated causal convolutional layers (figure \ref{fig:wavenet_dilated_cnn}) is taken. Hereupon, the data input layer is changed conceptually.
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/wavenet_dilated_cnn.png}
+  \caption{dilated convolutional network}
+  \label{fig:wavenet_dilated_cnn}
+\end{figure}
+
 \subsection{WaveNet architecture}
+Given a sequence of amplitudes, WaveNet predicts the subsequent amplitude. The amplitudes are quantized in 256 bins \cite{itu1988711}. In the $i$th step, the network then outputs a probability distribution $P(x_{i+1} | x_1, ..., x_i)$. The amplitude $x_{i+1}$ of the next step is then sampled according to that distribution.\\
+In WaveNet, training can be done in parallel while the generation of a audio sample is done sequentially.\\
+As a basis for WaveNet, the implementation of Igor Babuschkin is taken.\footnote{\url{https://github.com/ibab/tensorflow-wavenet}}\\
+The original WaveNet paper mentiones only very few coefficients for how their network is configured. Therefore reproducing the paper exactly is very hard. The following numbers are assumptions mainly based on the experience of Babuschkin's implementation. In the following experiments, the dilations are $2^n$ for $n$ taking the values $(0,1,...,7,8)$ and are repeated 5 times. This leads to 50 hidden dilation layers. The convolution filter size is set to $2$ and the number of channels of the residual and the dilation is $32$.\\
+The input of the WaveNet network is a sequence of amplitudes, each of which encoded as a one-hot vector.
+
 \textcolor{red}{rough description of wavenet architecture and specification used during the experiments}
 \subsection{Data preprocessing}
 To extract frequencies, the raw audio data consisting of pressure measurements are divided into chunks of size 2048, which are then transformed into the frequency space using FFT. Therefrom, the first 150 coefficients are taken as dominant frequencies for the subsequent training. To ensure that audio features are transformed smoothly, two neighboring raw audio chunks overlap in a few samples, described by a variable $stride$. Equation \ref{eq:fft} summarized the frequency extraction of the $i^\textnormal{th}$ chunk compactly.
@@ -53,11 +66,41 @@ To extract frequencies, the raw audio data consisting of pressure measurements a
 FFT(\textnormal{inputData}[i \cdot stride:\\i \cdot stride+2048])[:150]
 \end{multline}
 Considering real and imaginary parts of the complex Fourier coefficients separately, each chunk of 2048 raw audio samples is transformed into 300 real frequency values.\\
-To decrease the dimensionality even further, principle component analysis is used to reduce these 300 frequencies to 100 values. These 100 coefficient are considered one tone and fed into the network as one time step. Whereas in the original WaveNet architecture, 16000 samples represented on second of audio, the adopted network only needs to process $16000/2048 \approx 8$ samples per second. However, this change infers a fundamentally different approach of audio training and generation, described in the next section. 
+To decrease the dimensionality even further, principle component analysis (PCA) is used to reduce these 300 frequencies to 100 values.
+These 100 PCA coefficient are considered one tone and fed into the network as one time step.\\
+The eigenvectors of the PCA are shown in figure \ref{fig:pca_eigenvectors_imaginary_numbers}. Figure \ref{fig:pca_eigenvectors} illustrates how the PCA looks like when taking the absolute values of the imaginary numbers, out of which the components are built from. In this figure, one can see, that the relevant frequencies are all relatively low. Figure \ref{fig:pca_explained_variance} shows that a vast majority of the variance of the frequencies is captured by the first 100 PCA components. Summarizing, in neither of the two steps, we loose much of the original input information. This should lead to a decent compression of the audio signal.\\
+To make this evident, one can figure invert all the steps and plot the compressed wave and the original wave (see \ref{fig:preprocessing_difference_waveform}). It is easy to see that they resemble a lot. After preprocessing the audio contains a cracking noise, but nevertheless is the melody and the tone of the music well audible.\\
+To ensure this preprocessing still preserves the nature of the music, one can invert all steps. Although after preprocessing, there is an audible cracking, the music then is still clearly hearable and the pitches recognizable.
+On one hand, the waveform looks still similar (figure \ref{fig:preprocessing_difference_waveform})
+Whereas in the original WaveNet architecture, 16000 samples represented on second of audio, the adopted network only needs to process $16000/2048 \approx 8$ samples per second. However, this change infers a fundamentally different approach of audio training and generation, described in the next section. 
 
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/pca_eigenvectors_imaginary_numbers.png}
+  \caption{Eigenvectors of the PCA where the imaginary and the real part of the FFT are stored as a separate value in the PCA component.}
+  \label{fig:pca_eigenvectors_imaginary_numbers}
+\end{figure}
 
-\textcolor{red}{Missing: Comparison/error plot of original data vs. preprocessed data} 
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/pca_eigenvectors.png}
+  \caption{Transformed eigenvectors of the PCA: The values of the vectors are the absolute value of the corresponding imaginary number}
+  \label{fig:pca_eigenvectors}
+\end{figure}
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/pca_explained_variance}
+  \caption{Signal compression and denoising using the Daubechies wavelet basis.}
+  \label{fig:pca_explained_variance}
+\end{figure}
+
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/preprocessing_difference_waveform}
+  \caption{An example of how the output audio differs before and after preprocessing (compression)}
+  \label{fig:preprocessing_difference_waveform}
+\end{figure}
 
 \subsection{Network architecture and loss}
 Whereas the original WaveNet paper designed the network to perform a classification task, the adopted network aims to train and predict the frequencies of a audio sample directly. The network input during one time step is now not only one class describing the current tone, but a 100 dimensional vector representing the frequencies of the tone of time step in a compressed way. Similarly, the output of the network is no longer a softmax layer but also a 100 dimensional vector.\\
@@ -127,18 +170,7 @@ the paper. The four points that should be covered~\cite{jones08}:
 
 \subsection{Figures and Tables}
 
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/pca_eigenvectors}
-  \caption{Signal compression and denoising using the Fourier basis.}
-  \label{fig:denoise-fourier}
-\end{figure}
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/pca_explained_variance}
-  \caption{Signal compression and denoising using the Daubechies wavelet basis.}
-  \label{fig:denoise-wavelet}
-\end{figure}
+
 
 Use examples and illustrations to clarify ideas and results. For
 example, by comparing Figure~\ref{fig:denoise-fourier} and
