@@ -6,12 +6,13 @@ import intervaltree
 from sklearn.decomposition import IncrementalPCA
 import h5py
 import argparse
+import os
+import csv
 
 fs = 44100
 crop_freq_th = 150
-window_size = 2048
 window_size = 2048  # 2048-sample fourier windows
-stride = 512        # 512 samples between windows
+stride = 512 #samples between windows
 
 coeff_per_window = 100
 
@@ -47,16 +48,27 @@ def freq_extraction(data):
 
 	return freq
 
-def save_frequencies(input_file, output_file):
-	h5f = h5py.File(output_file, 'w')
-	for key, data in load_musicnet(input_file):
-		freq = freq_extraction(data)
-		h5f.create_dataset(key, data=freq)
+def save_frequencies(input_file, output_file, filter_piano):
+	if output_file is None:
+		output_dict = {}
+		for key, data in load_musicnet(input_file, filter_piano):
+			freq = freq_extraction(data)
+			output_dict[key] = freq
+			if VERBOSE:
+				print("frequencies of file {} extracted ({})".format(key, len(data)))
 		if VERBOSE:
-			print("frequencies of file {} extracted ({})".format(key, len(data)))
-	h5f.close()
-	if VERBOSE:
-		print("frequency extraction done")
+			print("frequency extraction done")
+		return output_dict
+	else:
+		h5f = h5py.File(output_file, 'w')
+		for key, data in load_npz(input_file):#load_musicnet(input_file):
+			freq = freq_extraction(data)
+			h5f.create_dataset(key, data=freq)
+			if VERBOSE:
+				print("frequencies of file {} extracted ({})".format(key, len(data)))
+		h5f.close()
+		if VERBOSE:
+			print("frequency extraction done")
 
 def save_pca(input_file, output_file):
 	'''
@@ -85,6 +97,59 @@ def save_pca(input_file, output_file):
 	if VERBOSE:
 		print("pca coefficients generation done")
 	h5f.close()
+
+def save_pca_passed_freq(freq_dict, output_file, normalize=False):
+	'''
+	Input file = frequency file
+	'''
+	pca = Audio_PCA()
+	for key, data in freq_dict.items():
+		pca.partial_fit(data)
+
+		if VERBOSE:
+			print("pca of file {} fitted".format(key))
+
+	if VERBOSE:
+		print("pca fitting done")
+	h5f = h5py.File(output_file, 'w')
+	h5f.create_dataset('pca/mean_', data=pca.mean_)
+	h5f.create_dataset('pca/components_', data=pca.components_)
+
+	pca_dict= {}
+	for key, data in freq_dict.items():
+		coeff = pca.transform(data)
+		pca_dict[key] = coeff
+		if VERBOSE:
+			print("pca coefficients of file {} generated".format(key))
+
+	if VERBOSE:
+		print("pca coefficients generation done")
+
+	if normalize:
+		# calculate mean an variance
+		all_pca = np.array([]).reshape((-1,coeff_per_window))
+		for key in pca_dict:
+			all_pca = np.concatenate((all_pca, pca_dict[key]), axis=0)
+		mean = np.mean(all_pca, axis=0)
+		var = np.var(all_pca, axis=0)
+
+		h5f.create_dataset('normalize/mean', data=mean)
+		h5f.create_dataset('normalize/var', data=var)
+
+		if VERBOSE:
+			print("Calculated mean and variance. Starting normalization.")
+
+		for key in freq_dict:
+			pca_dict[key] = pca_dict[key] - mean
+			pca_dict[key] = pca_dict[key] / (var / 10.0)
+			h5f.create_dataset('coeff/{}'.format(key), data=pca_dict[key])
+	else:
+		for key in freq_dict:
+			h5f.create_dataset('coeff/{}'.format(key), data=pca_dict[key])
+
+	h5f.close()
+	print("Preprocessing done.")
+
 
 class Audio_PCA(IncrementalPCA):
 	def __init__(self):
@@ -141,7 +206,7 @@ def dict_to_gen(d):
 	for key in d:
 		yield key, d[key]
 
-def load_freq(input, output_file=None):
+def load_freq(input, output_file=None, abs_value=False):
 	gen = load_h5f(input) if type(input) == str else dict_to_gen(input)
 
 	if output_file:
@@ -155,7 +220,10 @@ def load_freq(input, output_file=None):
 			Xs = np.zeros(window_size, dtype=complex)
 			Xs[:crop_freq_th] = freq[i]
 			Xs[-crop_freq_th+1:] = freq[i, 1:][::-1]
-			Xs_red[i*stride:i*stride+window_size] += np.real(np.fft.ifft(Xs))
+			if abs_value:
+				Xs_red[i * stride:i * stride + window_size] += np.abs(np.fft.ifft(Xs))
+			else:
+				Xs_red[i*stride:i*stride+window_size] += np.real(np.fft.ifft(Xs))
 
 		if output_file:
 			h5f.create_dataset(key, data=Xs_red)
@@ -171,10 +239,6 @@ def load_freq(input, output_file=None):
 
 
 def pca_incremental_fit(freq):
-	    
-
-	import ipdb; ipdb.set_trace()
-
 	return data
 
 def load_npz(filename):
@@ -185,39 +249,51 @@ def load_npz(filename):
 		print("reading file {}".format(key))
 		yield key, data[key][0].astype("float32")
 
-def load_musicnet(filename):
+def load_musicnet(filename, filter_piano=False):
+	if filter_piano:
+		#Get all ids with Piano music
+		valid_keys = []
+		if os.path.isfile(filename[:-3] + "_metadata.csv"):
+			with open(filename[:-3] + "_metadata.csv", 'r') as f:
+				reader = csv.reader(f)
+				for row in reader:
+					if row[4].find("Piano") >= 0:
+						valid_keys.append("id_"+str(row[0]))
+		else:
+			print("Metadata file could not be found.")
+
 	f = h5py.File(filename, 'r')
 	for key in f:
-		yield key, f[key]['data'].value
-
+		if filter_piano:
+			if key in valid_keys:
+				yield key, f[key]['data'].value
+			else:
+				print("Skipped key" + key)
+		else:
+			yield key, f[key]['data'].value
 
 def load_h5f(filename):
 	f = h5py.File(filename, 'r')
 	for key in f:
 		yield key, f[key].value
 
-def preprocess(data_file, freq_file=None, pca_file=None):
+def preprocess(data_file, freq_file, pca_file, filter_piano):
 	if not freq_file:
 		freq_file = data_file[:-4]+"_freq.h5"
 	if not pca_file:
 		pca_file = data_file[:-4]+"_pca.h5"
 
-	#save_frequencies(data_file, freq_file)
-	save_pca(freq_file, pca_file)
+	freq_dict = save_frequencies(data_file, None, filter_piano)
+	save_pca_passed_freq(freq_dict, pca_file)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--data_file", type=str, required=True, help="Path of the *.npz data file")
 	parser.add_argument("--freq_file", type=str, default=None, help="Path of the frequencies output")
 	parser.add_argument("--pca_file", type=str, default=None, help="Path of the pca output file")
+	parser.add_argument('--filter_piano', type=bool, default=False, help='Should a metadata file be used to filter piano pieces.')
 	args = parser.parse_args()
 
-	#h5f = h5py.File(output_file, 'w')
-	#for key, data in load_npz(args.data_file):
-	#	processed_data = preprocess(data)
-	#	h5f.create_dataset(key, data=processed_data)
-	#h5f.close()
-
-	preprocess(args.data_file, args.freq_file, args.pca_file)
+	preprocess(args.data_file, args.freq_file, args.pca_file, args.filter_piano)
 
 	#np.save(output_file, proc_data)

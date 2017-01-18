@@ -60,20 +60,10 @@ def load_npz_audio(directory, sample_rate):
             yield X, '{}_{}'.format(filename, file_i)
 
 def load_pca_audio(directory, sample_rate):
-    files = find_files(directory, pattern='*_pca.h5')
+    files = find_files(directory, pattern='*.h5')
     for filename in files:
-        if os.path.isfile(filename[:-7]+"_metadata.csv"):
-            keys = []
-            with open(filename[:-7]+"_metadata.csv", 'r') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if row[1] == "Beethoven" and row[2].find("Piano") >= 0:
-                        keys.append("id_"+str(row[0]))
-        else:
-            keys = h5f['coeff']
-
         h5f = h5py.File(filename, 'r')
-        keys = ["id_2322"]
+        keys = h5f['coeff']
         for file_i in keys:
             X = h5f['coeff/{}'.format(file_i)].value
             yield X, '{}_{}'.format(filename, file_i)
@@ -115,7 +105,7 @@ class AudioReader(object):
         # TODO Find a better way to check this.
         # Checking inside the AudioReader's thread makes it hard to terminate
         # the execution of the script, so we do it in the constructor for now.
-        if not find_files(audio_dir, pattern="*_pca.h5"):
+        if not find_files(audio_dir, pattern="*.h5"):
             raise ValueError("No audio files found in '{}'.".format(audio_dir))
 
     def dequeue(self, num_elements):
