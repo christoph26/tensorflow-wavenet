@@ -131,12 +131,17 @@ The consequence of these frequencies not changing is, that the audio file consis
 \end{figure*}
 
 \section{Discussion}
-The approach of this paper could be promising due to the following reason: The original WaveNet paper's network has to learn the behaviour of sound consisting of repetitive oscillations. With transforming the signal to the Fourier space, we take this burden from the neural network. The network can focus on data which is more related to the final tone. For example when a tone is repeated for 1s, this is also the same output of the network.\\
+The approach of this paper could be promising due to the following reason: The original WaveNet paper's network has to learn the behaviour of sound consisting of repetitive oscillations. With transforming the signal to the Fourier space, we take this burden from the neural network. The network can focus on data which is more related to the final tone. For example while a tone is the same for a certain time, the output of the network is also the same.\\
 But it might be exactly this phenomenon which makes good music generation impossible. During training, the network might do really well only staying on one and the same pitch, because changes happen in too rare occasions to influence the overall loss.\\
-When improving this approach further, one could try to include the rate of changing tones into the loss function and to punish a network when producing too many times in a row a similar output.\\
+Future work based on that paper, one could try to include the rate of changing tones into the loss function and to punish a network when producing too many times in a row a similar output.\\
+There are two reasons one could think of, why this approach's result does not match its expectations:
+\begin{itemize}
+  \item The original paper quantizes the amplitudes and can then use a softmax layer as a last layer of the network. In this new approach, we need continous values (PCA coefficients). Since the results are much worse than with WaveNet, the missing quantization (and connected to it the missing softmax layer) might be the reason behind this phenomenon.
+  \item The original WaveNet has a probability distribution as output. The exact amplitudes are then sampled according to that distribution. In the approach presented in this paper, one relies on continuous values, which are directly calculated (no probabilities included). In future work, one can change the model to produce a probability distribution of the output values.
+\end{itemize}
 
 \section{Summary}
-
+With WaveNet an already very promising music generation network is presented. It relies on predicting amplitudes when the preceeding amplitudes are given. In this paper it is investigated whether transforming the data to the Fourier space improves the predictions. After transforming, the dimensionality of the audio file is vastly diminished. But at the same time, the ability to quantize the network's outputs is lost. Unfortunately the network returned results not as good as with the original WaveNet paper. With the new method, the generated audio files rapidly converge to one steady tone. The changing behaviour of pitches is not learned by the network.
 
 \bibliographystyle{IEEEtran}
 \bibliography{paper}
