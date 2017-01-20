@@ -134,7 +134,7 @@ It has been shown that the stride is of great importance for the strength of the
 Therefore one can assume that with changing the setting (stride, but also window size, dilations, normalization etc.), also this approach might produce good results.
 
 \section{Summary}
-With WaveNet an already very promising music generation network is presented. It relies on predicting amplitudes when the preceeding amplitudes are given. In this paper it is investigated whether transforming the data to the Fourier space improves the predictions. After transforming, the dimensionality of the audio file is vastly diminished. But at the same time, the ability to quantize the network's outputs is lost. Unfortunately the network returned results not as good as with the original WaveNet paper. With the new method, the generated audio files rapidly converge to one steady tone. The changing behaviour of pitches is not learned by the network.
+With WaveNet a very promising music generation network is presented. It relies on predicting amplitudes when the preceeding amplitudes are given. In this paper it is investigated whether transforming the data to the Fourier space improves the predictions. After transforming, the dimensionality of the audio file is vastly diminished. But at the same time, the ability to quantize the network's outputs is lost. Unfortunately the network could not return as good results as the original WaveNet paper. With the adopted network architecture, the generated audio files rapidly converge to one steady tone, while changes of pitches is not learned. However, by the approaches and discussions in the paper yiels conceptual insights and motivate further investigations.
 
 \bibliographystyle{IEEEtran}
 \bibliography{paper}
