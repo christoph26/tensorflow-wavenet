@@ -26,7 +26,7 @@
 \section{Introduction}
 In 2016, \cite{wavenet} introduced WaveNet, a generative model for raw audio achieving astonishing results in learning sound features and generating harmonious audio. Trained on piano music, highly dynamic piano music varying smoothly in melody, volume and speed could be generated.\\
 The aim of this paper is to enhance the WaveNet architecture and apply it to a more feature-oriented representation of input data. Instead of performing a classification task on raw audio, the network is adopted to operate on the frequencies of the audio data, processed by Fouier transformation.\\
-As training data in the experiments, piano samples from the MusicNet dataset, a collection of 330 freely-licenced recordings of classical music are taken. The data is publicly available online \cite{musicnet}.\\
+As training data in the experiments, piano samples from the MusicNet dataset, a collection of 330 freely-licenced recordings of classical music are taken. The music is recorded with 44100 samples per second. The data is publicly available online \cite{musicnet}.\\
 In particular, the following topics are covered:
 \begin{itemize}
 \item Based on WaveNet from \cite{wavenet}, a network architecture to generate music is introduced operating on the frequencies of audio input.
@@ -55,27 +55,19 @@ To extract frequencies, the raw audio data consisting of pressure measurements a
 FFT(\textnormal{inputData}[i \cdot stride:\\i \cdot stride+2048])[:150]
 \end{multline}
 Considering real and imaginary parts of the complex Fourier coefficients separately, each chunk of 2048 raw audio samples is transformed into 300 real frequency values.\\
-To decrease the dimensionality even further, principle component analysis (PCA) is used to reduce these 300 frequencies to 100 values.
-These 100 PCA coefficient are considered one tone and fed into the network as one time step.\\
-The eigenvectors of the PCA are shown in figure \ref{fig:pca_eigenvectors_imaginary_numbers}. Figure \ref{fig:pca_eigenvectors} illustrates how the PCA looks like when taking the absolute values of the imaginary numbers, out of which the components are built from. In this figure, one can see, that the relevant frequencies are all relatively low. Figure \ref{fig:pca_explained_variance} shows that a vast majority of the variance of the frequencies is captured by the first 100 PCA components. Summarizing, in neither of the two steps, we loose much of the original input information. This should lead to a decent compression of the audio signal.\\
-To make this evident, one can figure invert all the steps and plot the compressed wave and the original wave (see \ref{fig:preprocessing_difference_waveform}). It is easy to see that they resemble a lot. After preprocessing the audio contains a cracking noise, but nevertheless is the melody and the tone of the music well audible.\\
-To ensure this preprocessing still preserves the nature of the music, one can invert all steps. Although after preprocessing, there is an audible cracking, the music then is still clearly hearable and the pitches recognizable.
-On one hand, the waveform looks still similar (figure \ref{fig:preprocessing_difference_waveform})
-Whereas in the original WaveNet architecture, 16000 samples represented on second of audio, the adopted network only needs to process $16000/2048 \approx 8$ samples per second. However, this change infers a fundamentally different approach of audio training and generation, described in the next section. 
+To decrease the dimensionality even further, principle component analysis (PCA) is used to reduce these 300 frequencies to 100 values. These 100 PCA coefficient are considered one tone and fed into the network as one time step.\\
+Whereas in the original WaveNet architecture, 16000 samples represented on second of audio, the adopted network only needs to process $44100/2048 \approx 22$ samples per second. However, this change infers a fundamentally different approach of audio training and generation, described in the next section. \\
 
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/pca_eigenvectors_imaginary_numbers.png}
-  \caption{Eigenvectors of the PCA where the imaginary and the real part of the FFT are stored as a separate value in the PCA component.}
-  \label{fig:pca_eigenvectors_imaginary_numbers}
-\end{figure}
+\subsection{Evaluation of the preprocessing}
+The following analyses the amount of information which is lost by the compression steps of the previous session. Figure \ref{fig:pca_explained_variance} plots the explained variance of the first 250 eigenvectors during the The vast majority of the variance of the frequencies is captured by the first 100 PCA components. Thus, PCA is a reasonable measure to reduce the 300 dimensional data from the FFT to 100 PCA components.\\
+The best way to evaluate a compression procedure is to compare a compressed and afterwards reconstructed input to the original data. Figure \ref{fig:preprocessing_difference_waveform} compares exemplarily the recorded raw audio input of a music sample from the MusicNet dataset to a compressed and afterwards reconstructed version of the signal. The plot shows that the two signals are similar in their general behavour and only vary vary only in small details.\\
+The same results can be observed by listening to the original and the compressed and reconstructed audio file: After preprocessing the audio contains some cracking noise, but nevertheless is the melody and the tone of the music well audible.\\
+Summarizing, in neither by cutting after the first 150 FFT coefficients, nor by the PCA sigifican information of the original input is lost. Therefore, the described preprocessing leads to a decent compression of the audio signal.\\
 
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/pca_eigenvectors.png}
-  \caption{Transformed eigenvectors of the PCA: The values of the vectors are the absolute value of the corresponding imaginary number}
-  \label{fig:pca_eigenvectors}
-\end{figure}
+
+
+
+
 
 \begin{figure}[htbp]
   \centering
@@ -87,7 +79,7 @@ Whereas in the original WaveNet architecture, 16000 samples represented on secon
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\columnwidth]{figures/preprocessing_difference_waveform}
-  \caption{An example of how the output audio differs before and after preprocessing (compression)}
+  \caption{An example of how the output audio differs before and after compression.}
   \label{fig:preprocessing_difference_waveform}
 \end{figure}
 
@@ -103,11 +95,14 @@ This change in architecture also affects the loss during training. Instead of a 
 \end{figure}
 \section{Results}
 The results of all experiments are summarized in a python notebook of the GitHub repository.\footnote{"evaluate\_results.ipynb", available in the subfolder "notebooks"} A suitable training session required approximately 6000-8000 training steps. Figure \ref{fig:training_error} plots the typical process of the error during training.\\
+\subsection{General results}
  Unfortunately, the adopted network could not perform as well as the original WaveNet architecture. All generated audio files stabilized on one distribution of frequencies after a few seconds. From then on the values of the frequencies did not change any more. Instead of learning the complete range of frequencies, which define the features of the audio input, the network could only learn some low basis frequencies being constantly present all the time.\\
 Figures \ref{fig:original_frequencies} and \ref{fig:generated_frequencies} compare the frequencies of a recorded audio piece from the input data and the frequencies of a generated sample. In the first 200 time frames, the frequency distributions look quite similar. However, afterwards the neural network is not able to produce frequency changes continuously, while a real piece of music observes a change every 20-60 frames.\\
 Furthermore the original and generated audios differ in their frequency range. Whereas the original music piece only consists of frequencies up to 32, the generated audio contains frequencies up to 105. This shows that the network has difficulties to decide which frequencies are important and cannot produce as compact and compressed audio output as it is achieved by using FFT and PCA on recorded audio data.\\
 Nevertheless, the experiments of this paper can be analysed more detailled. Varying the stride and including normalization yielded conceptually different results.\\
+\subsection{Striding}
 Overlapping chunks of input data turned out to be essential for learning audio features properly. With a stride of 512 (resulting in an overlap of 75\% of neighboring data chunks) results with dynamic volume changes and frequencies within the range $[0, 105]$ within the first seconds of the generated audio could be achieved. Figure \ref{fig:generated_frequencies} visualizes the frequencies of the first 30 seconds of the output. In contrast to that, with a stride of 2048 (meaning no overlap) the network only grasped really frequencies in the range $[0,1.6]$ producing no volume or frequency dynamic in the generated audio at all.\textcolor{red}{Missing for discussion: on the one hand overlap necessary, on the other hand emphasises this to learn constant tones.}\\
+\subsection{Normalization}
 A second conceptual attempt during the experiments was to normalize the PCA results before the training. The aim of this additional preprocessing task was to balance the contribution of all 100 PCA dimensions to the loss, hoping that all frequencies are learned more equally. In a first attempt, data normalzed to zero mean and unit variance turned out to produce too small loss for training. With vanishing gradients the network could not learn at all. Therefore, in a second attempt the input data was normalized to zero mean and an equal variance of all dimensions of 10. With this specifications, the network was able to learn as well as without normalization.\\
 As intended, the normalization helped to learn higher frequencies. The generated results with this setting contained more different frequencies from the range $[0,360]$. But the generated audio still converged to a constant distribution of frequencies after a few seconds. 
 \begin{figure}[tbp]
