@@ -53,6 +53,12 @@ You can find these in the `logdir`.
 The `--samples` parameter specifies how many pca samples you would like to generate.
 The `--pca_out_path` parameter specifies where to store the generated pca file.
 
+To get from the pca coefficients to a wav file, execute
+```
+python postprocess.py --pca_file=corpus/musicnet.h5 --coeff_file=generated.h5 --wav_file=generated.wav
+```
+where `corpus/musicnet.h5` is the output file from preprocessing, `generated.h5` are the pca coefficients (output of the `generate.py` file) and `generated.wav` is the audio output file.
+
 ## Comments
 
 The files [`preprocess.py`](./preprocess.py), [`postprocess.py`](./postprocess.py) and [`normalize.py`](./normalize.py) are added by us. And the previously existing code from https://github.com/ibab/tensorflow-wavenet had partly also to be altered ([`train.py`](./train.py), [`generate.py`](./generate.json) and the entire folder [`wavenet/`](./wavenet/)). The parts we changed in these files are marked with the keyword `EXTENSION`.
