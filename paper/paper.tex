@@ -20,16 +20,7 @@
 \maketitle
 
 \begin{abstract}
-  A critical part of scientific discovery is the
-  communication of research findings to peers or the general public.
-  Mastery of the process of scientific communication improves the
-  visibility and impact of research. While this guide is a necessary
-  tool for learning how to write in a manner suitable for publication
-  at a scientific venue, it is by no means sufficient, on its own, to
-  make its reader an accomplished writer. We also describe the rules
-  for submission in the computational intelligence laboratory.
-  This guide should be a
-  starting point for further development of writing skills.
+	This paper introduces a new attempt to generate audio by a deep neural network based on a stack of dilated convolutional layers. It adopts the network architecture from the paper "WaveNet: A Generative Model for Raw Audio" to operate in the frequency space. When applied to piano recording, the network is able to learn low basis frequencies, but struggles to grasp and generate sound features of dynamic and well-sounding audio. Nevertheless, different attempts of normalization and data preprocesing yield conceptual insights in the functioning of the WaveNet architecture.
 \end{abstract}
 
 \section{Introduction}
@@ -104,8 +95,15 @@ Whereas in the original WaveNet architecture, 16000 samples represented on secon
 Whereas the original WaveNet paper designed the network to perform a classification task, the adopted network aims to train and predict the frequencies of a audio sample directly. The network input during one time step is now not only one class describing the current tone, but a 100 dimensional vector representing the frequencies of the tone of time step in a compressed way. Similarly, the output of the network is no longer a softmax layer but also a 100 dimensional vector.\\
 This change in architecture also affects the loss during training. Instead of a softmax cross-entropy loss the adopted network uses the mean squared error as loss function during training.
 
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\columnwidth]{figures/loss.png}
+  \caption{Training error}
+  \label{fig:training_error}
+\end{figure}
 \section{Results}
-The results of all experiments are summarized in a python notebook of the GitHub repository.\footnote{"evaluate\_results.ipynb", available in the subfolder "notebooks"} Unfortunately, the adopted network could not perform as well as the original WaveNet architecture. All generated audio files stabilized on one distribution of frequencies after a few seconds. From then on the values of the frequencies did not change any more. Instead of learning the complete range of frequencies, which define the features of the audio input, the network could only learn some low basis frequencies being constantly present all the time.\\
+The results of all experiments are summarized in a python notebook of the GitHub repository.\footnote{"evaluate\_results.ipynb", available in the subfolder "notebooks"} A suitable training session required approximately 6000-8000 training steps. Figure \ref{fig:training_error} plots the typical process of the error during training.\\
+ Unfortunately, the adopted network could not perform as well as the original WaveNet architecture. All generated audio files stabilized on one distribution of frequencies after a few seconds. From then on the values of the frequencies did not change any more. Instead of learning the complete range of frequencies, which define the features of the audio input, the network could only learn some low basis frequencies being constantly present all the time.\\
 Figures \ref{fig:original_frequencies} and \ref{fig:generated_frequencies} compare the frequencies of a recorded audio piece from the input data and the frequencies of a generated sample. In the first 200 time frames, the frequency distributions look quite similar. However, afterwards the neural network is not able to produce frequency changes continuously, while a real piece of music observes a change every 20-60 frames.\\
 Furthermore the original and generated audios differ in their frequency range. Whereas the original music piece only consists of frequencies up to 32, the generated audio contains frequencies up to 105. This shows that the network has difficulties to decide which frequencies are important and cannot produce as compact and compressed audio output as it is achieved by using FFT and PCA on recorded audio data.\\
 Nevertheless, the experiments of this paper can be analysed more detailled. Varying the stride and including normalization yielded conceptually different results.\\
@@ -125,12 +123,7 @@ As intended, the normalization helped to learn higher frequencies. The generated
   \label{fig:generated_frequencies}
 \end{figure}
 
-%\begin{figure*}[tbp]
-%  \centering
-%  \includegraphics[width=\textwidth]{figures/loss.png}
-%  \caption{Training error}
-%  \label{fig:training_error}
-%\end{figure*}
+
 
 \section{Discussion}
 The approach of this paper could be promising due to the following reason: The original WaveNet paper's network has to learn the behaviour of sound consisting of repetitive oscillations. With transforming the signal to the Fourier space, we take this burden from the neural network. The network can focus on data which is more related to the final tone. For example while a tone is the same for a certain time, the output of the network is also the same.\\
