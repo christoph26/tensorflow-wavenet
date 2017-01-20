@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 ## Data source
 
-We used the musicnet which can be downloaded here (https://homes.cs.washington.edu/~thickstn/start.html) (around 7.1GB).
+We used the musicnet which can be downloaded here https://homes.cs.washington.edu/~thickstn/start.html (around 7.1GB).
 Download the `musicnet.h5` file and the `musicnet_metadata.csv` file and place it in the same folder (on the same level).
 
 ## Preprocessing
