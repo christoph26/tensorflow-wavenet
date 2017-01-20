@@ -52,3 +52,7 @@ where `model.ckpt-1000` needs to be a previously saved model.
 You can find these in the `logdir`.
 The `--samples` parameter specifies how many pca samples you would like to generate.
 The `--pca_out_path` parameter specifies where to store the generated pca file.
+
+## Comments
+
+The files [`preprocess.py`](./preprocess.py), [`postprocess.py`](./postprocess.py) and [`normalize.py`](./normalize.py) are added by us. And the previously existing code from https://github.com/ibab/tensorflow-wavenet had partly also to be altered ([`train.py`](./train.py), [`generate.py`](./generate.json) and the entire folder [`wavenet/`](./wavenet/)). The parts we changed in these files are marked with the keyword `EXTENSION`.
