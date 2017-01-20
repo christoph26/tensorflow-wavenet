@@ -32,33 +32,30 @@
 \end{abstract}
 
 \section{Introduction}
-In 2016, \cite{wavenet} introduced WaveNet, a generative model for raw audio achieving astonishing results in learning sound features and generating smooth audio. Trained on piano music, new highly dynamic piano music varying in melody, volume and speed smoothly could be generated.\\
-The aim this paper is to enhance the WaveNet architecture and apply it to a more feature-oriented representation of input data. Instead of performing a classification task on raw audio, the network is adopted to operate on the frequencies of the audio data, processed by Fouier transformation. In particular, the following topics are covered:
+In 2016, \cite{wavenet} introduced WaveNet, a generative model for raw audio achieving astonishing results in learning sound features and generating harmonious audio. Trained on piano music, highly dynamic piano music varying smoothly in melody, volume and speed could be generated.\\
+The aim of this paper is to enhance the WaveNet architecture and apply it to a more feature-oriented representation of input data. Instead of performing a classification task on raw audio, the network is adopted to operate on the frequencies of the audio data, processed by Fouier transformation.\\
+As training data in the experiments, piano samples from the MusicNet dataset, a collection of 330 freely-licenced recordings of classical music are taken. The data is publicly available online \cite{musicnet}.\\
+In particular, the following topics are covered:
 \begin{itemize}
-\item Based on WaveNet from \cite{wavenet} a network architecture to generate music is introduced operating on the frequencies of audio input.
+\item Based on WaveNet from \cite{wavenet}, a network architecture to generate music is introduced operating on the frequencies of audio input.
 \item This new network is trained and evaluated on piano music from the MusicNet dataset. Furthermore, optimization approaches as data normalization and variations in preprocessing the data are included in the experiments.
 \item Results from the evaluation are analyzed in detail. In the context of the introduced network, advantages as well as weaknesses are discussed. 
 \end{itemize}
-As training data in the experiments, piano samples from the MusicNet dataset, a collection of 330 freely-licenced recordings of classical music are taken. The data is publicly available online \cite{musicnet}.\\
 The source code of the experiments can be found on GitHub.\footnote{\url{https://github.com/sennluzi/tensorflow-wavenet}}
 
 \section{Models and Methods}
-The following section describes the underlying model of the network used in the experiments of this paper. As core network the WaveNet architecture with a stack of dilated causal convolutional layers (figure \ref{fig:wavenet_dilated_cnn}) is taken. Hereupon, the data input layer is changed conceptually.
+The following section describes the underlying model of the network used in the experiments of this paper. As core network the WaveNet architecture with a stack of dilated causal convolutional layers is taken. Hereupon, the data input layer is changed conceptually.
 \begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\columnwidth]{figures/wavenet_dilated_cnn.png}
-  \caption{dilated convolutional network}
-  \label{fig:wavenet_dilated_cnn}
+	\centering
+	\includegraphics[width=\columnwidth]{figures/wavenet_dilated_cnn.png}
+	\caption{dilated convolutional network}
+	\label{fig:wavenet_dilated_cnn}
 \end{figure}
-
 \subsection{WaveNet architecture}
-Given a sequence of amplitudes, WaveNet predicts the subsequent amplitude. The amplitudes are quantized in 256 bins \cite{itu1988711}. In the $i$th step, the network then outputs a probability distribution $P(x_{i+1} | x_1, ..., x_i)$. The amplitude $x_{i+1}$ of the next step is then sampled according to that distribution.\\
-In WaveNet, training can be done in parallel while the generation of a audio sample is done sequentially.\\
-As a basis for WaveNet, the implementation of Igor Babuschkin is taken \cite{Babuschkin2016}.\\
-The original WaveNet paper mentiones only very few coefficients for how their network is configured. Therefore reproducing the paper exactly is very hard. The following numbers are assumptions mainly based on the experience of Babuschkin's implementation. In the following experiments, the dilations are $2^n$ for $n$ taking the values $(0,1,...,7,8)$ and are repeated 5 times. This leads to 50 hidden dilation layers. The convolution filter size is set to $2$ and the number of channels of the residual and the dilation is $32$.\\
-The input of the WaveNet network is a sequence of amplitudes, each of which encoded as a one-hot vector.
-
-\textcolor{red}{rough description of wavenet architecture and specification used during the experiments}
+Given a sequence of amplitudes, WaveNet predicts the subsequent amplitude. This task is done in a classification setting: The amplitudes are quantized in 256 classes \cite{itu1988711}. The input of the WaveNet network is a sequence of such quantizied amplitudes, each encoded as a 256-dimensional one-hot vector. Performing a softmax-function in its last layer, the network outputs a probability distribution $P(x_{i+1} | x_1, ..., x_i)$ in the $i$th step. The amplitude $x_{i+1}$ of the next step is then sampled according to that distribution.\\
+To model the the dependency of an audio sample on previous samples, WaveNet uses a stack of dilated convolutions. Figure \ref{fig:wavenet_dilated_cnn} depicts this architecture exemplarily for such a network of depth 4. By using exponentially growing dilations in depth, a network with $n$ dilated convolutional layers can observe the last $2^n$ input values to predict an output.\\
+Training WaveNet is done similar as an autoencoder: The $i$th amplitude of the input data is predicted by only using previous input data and taken as label for the loss calculation and backpropagation. Thus, training only requires the input data and can be done in parallel. Against that, the generation of a audio sample has to be processed sequentially, since the $i$th step relies on the output of the $(i-1)$th one.\\
+As a basis for WaveNet, the implementation of Igor Babuschkin is taken \cite{Babuschkin2016}. The original WaveNet paper mentions only very few coefficients for how their network is configured. Therefore reproducing the paper exactly is very hard. The following numbers are assumptions mainly based on the experience of Babuschkin's implementation. In the following experiments, the dilations are $2^n$ for $n$ taking the values $(0,1,...,8)$ and are repeated 5 times. This leads to 50 hidden dilation layers. The convolution filter size is set to $2$ and the number of channels of the residual and the dilation is $32$.\\
 \subsection{Data preprocessing}
 To extract frequencies, the raw audio data consisting of pressure measurements are divided into chunks of size 2048, which are then transformed into the frequency space using FFT. Therefrom, the first 150 coefficients are taken as dominant frequencies for the subsequent training. To ensure that audio features are transformed smoothly, two neighboring raw audio chunks overlap in a few samples, described by a variable $stride$. Equation \ref{eq:fft} summarized the frequency extraction of the $i^\textnormal{th}$ chunk compactly.
 \begin{multline}\label{eq:fft}
