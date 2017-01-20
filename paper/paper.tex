@@ -109,28 +109,28 @@ The results of all experiments are summarized in a python notebook of the GitHub
 Figures \ref{fig:original_frequencies} and \ref{fig:generated_frequencies} compare the frequencies of a recorded audio piece from the input data and the frequencies of a generated sample. In the first 200 time frames, the frequency distributions look quite similar. However, afterwards the neural network is not able to produce frequency changes continuously, while a real piece of music observes a change every 20-60 frames.\\
 Furthermore the original and generated audios differ in their frequency range. Whereas the original music piece only consists of frequencies up to 32, the generated audio contains frequencies up to 105. This shows that the network has difficulties to decide which frequencies are important and cannot produce as compact and compressed audio output as it is achieved by using FFT and PCA on recorded audio data.\\
 Nevertheless, the experiments of this paper can be analysed more detailled. Varying the stride and including normalization yielded conceptually different results.\\
-Overlapping chunks of input data turned out to be essential for learning audio features properly. With a stride of 512 (resulting in an overlap of 75\% of neighboring data chunks) results with dynamic volume changes and frequencies within the range $[0, 105]$ within the first seconds of the generated audio could be achieved. In contrast to that, with a stride of 2048 (meaning no overlap) the network only grasped really frequencies in the range $[0,1.6]$ producing no volume or frequency dynamic in the generated audio at all.\textcolor{red}{Missing for discussion: on the one hand overlap necessary, on the other hand emphasises this to learn constant tones.}\\
+Overlapping chunks of input data turned out to be essential for learning audio features properly. With a stride of 512 (resulting in an overlap of 75\% of neighboring data chunks) results with dynamic volume changes and frequencies within the range $[0, 105]$ within the first seconds of the generated audio could be achieved. Figure \ref{fig:generated_frequencies} visualizes the frequencies of the first 30 seconds of the output. In contrast to that, with a stride of 2048 (meaning no overlap) the network only grasped really frequencies in the range $[0,1.6]$ producing no volume or frequency dynamic in the generated audio at all.\textcolor{red}{Missing for discussion: on the one hand overlap necessary, on the other hand emphasises this to learn constant tones.}\\
 A second conceptual attempt during the experiments was to normalize the PCA results before the training. The aim of this additional preprocessing task was to balance the contribution of all 100 PCA dimensions to the loss, hoping that all frequencies are learned more equally. In a first attempt, data normalzed to zero mean and unit variance turned out to produce too small loss for training. With vanishing gradients the network could not learn at all. Therefore, in a second attempt the input data was normalized to zero mean and an equal variance of all dimensions of 10. With this specifications, the network was able to learn as well as without normalization.\\
 As intended, the normalization helped to learn higher frequencies. The generated results with this setting contained more different frequencies from the range $[0,360]$. But the generated audio still converged to a constant distribution of frequencies after a few seconds. 
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\columnwidth]{figures/original_frequencies.png}
-  \caption{Frequencies of a piano piece used for training}
+  \caption{Frequencies of a piano piece used for training (Recording 2322 from the MusicNet dataset). }
   \label{fig:original_frequencies}
 \end{figure}
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\columnwidth]{figures/generated_frequencies_20s_2.png}
-  \caption{Frequencies of the generated audio piece}
+  \caption{Frequencies of a generated audio piece, model trained on the MusicNet dataset with $stride=512$ and no normalization.}
   \label{fig:generated_frequencies}
 \end{figure}
 
-\begin{figure*}[tbp]
-  \centering
-  \includegraphics[width=\textwidth]{figures/loss.png}
-  \caption{Training error}
-  \label{fig:training_error}
-\end{figure*}
+%\begin{figure*}[tbp]
+%  \centering
+%  \includegraphics[width=\textwidth]{figures/loss.png}
+%  \caption{Training error}
+%  \label{fig:training_error}
+%\end{figure*}
 
 \section{Discussion}
 The approach of this paper could be promising due to the following reason: The original WaveNet paper's network has to learn the behaviour of sound consisting of repetitive oscillations. With transforming the signal to the Fourier space, we take this burden from the neural network. The network can focus on data which is more related to the final tone. For example while a tone is the same for a certain time, the output of the network is also the same.\\
