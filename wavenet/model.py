@@ -425,7 +425,14 @@ class WaveNetModel(object):
         '''Computes the probability distribution of the next sample based on
         all samples in the input waveform.
         If you want to generate audio by feeding the output of the network back
-        as an input, see predict_proba_incremental for a faster alternative.'''
+        as an input, see predict_proba_incremental for a faster alternative.
+
+    
+        EXTENSION
+        remove the softmax layer
+        And no encoding as a one hot vector
+        -> The output of the network is taken as it is.
+        '''
         with tf.name_scope(name):
             if self.scalar_input:
                 encoded = tf.cast(waveform, tf.float32)
@@ -451,7 +458,14 @@ class WaveNetModel(object):
     def predict_proba_incremental(self, waveform, name='wavenet'):
         '''Computes the probability distribution of the next sample
         incrementally, based on a single sample and all previously passed
-        samples.'''
+        samples.
+
+
+        EXTENSION
+        remove the softmax layer
+        And no encoding as a one hot vector
+        -> The output of the network is taken as it is.
+        '''
         if self.filter_width > 2:
             raise NotImplementedError("Incremental generation does not "
                                       "support filter_width > 2.")
@@ -484,6 +498,11 @@ class WaveNetModel(object):
         '''Creates a WaveNet network and returns the autoencoding loss.
 
         The variables are all scoped to the given name.
+
+
+        EXTENSION
+        Change the loss function to the mean squared error loss of the resulting pca coefficients vectors (length 100)
+        The one hot decoding is removed and the cross-entropy loss too.
         '''
         with tf.name_scope(name):
 
@@ -495,7 +514,7 @@ class WaveNetModel(object):
 
             #encoded = self._one_hot(input_batch)
 
-            # New: no encoding of the input
+            # EXTENSION: no encoding of the input
             encoded = input_batch
             if self.scalar_input:
                 network_input = tf.reshape(
@@ -518,8 +537,9 @@ class WaveNetModel(object):
                 #loss = tf.nn.softmax_cross_entropy_with_logits(
                 #    prediction,
                 #    tf.reshape(shifted, [-1, self.quantization_channels]))
+
+                # EXTENSION: new loss function: mean squared error
                 loss = tf.square(prediction-tf.reshape(shifted, [-1, self.quantization_channels]))
-                #try out sum
                 reduced_loss = tf.reduce_mean(loss)
 
                 tf.scalar_summary('loss', reduced_loss)

@@ -40,29 +40,19 @@ def load_vctk_audio(directory, sample_rate):
         speaker_id, recording_id = [int(id_) for id_ in matches]
         yield audio, speaker_id
 
-def load_npz_audio(directory, sample_rate):
-    files = find_files(directory, pattern='*.npz')
-    for filename in files:
-        keys = []
-        data = np.load(open(filename, 'rb'), encoding='bytes')
-        if os.path.isfile(filename[:-4]+"_metadata.csv"):
-            with open(filename[:-4]+"_metadata.csv", 'r') as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if row[1] == "Beethoven" and row[2].find("Piano") >= 0:
-                        keys.append(row[0])
-        else:
-            keys = data.files
-        for file_i in keys:
-            X,Y = data[str(file_i)]
-            X = X.astype("float32")
-            X = X.reshape(-1,1)
-            yield X, '{}_{}'.format(filename, file_i)
+
+'''
+EXTENSION
+this loads the data in pca format to feed into the network.
+'''
 
 def load_pca_audio(directory, sample_rate):
+    # search for all h5 files
     files = find_files(directory, pattern='*.h5')
     for filename in files:
         h5f = h5py.File(filename, 'r')
+
+        # The coefficients are read and the (key (id), value (pca coefficients)) - pair is produced
         keys = h5f['coeff']
         for file_i in keys:
             X = h5f['coeff/{}'.format(file_i)].value
@@ -122,6 +112,9 @@ class AudioReader(object):
                 if self.coord.should_stop():
                     stop = True
                     break
+                # EXTENSION
+                # this function had to be adapted. The one-hot encoding had to be removed
+
 
                 # Silence threshold not needed with pca data, since this is alrady taken into account when producing the pca data
                 #if self.silence_threshold is not None:

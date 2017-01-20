@@ -75,7 +75,7 @@ def get_arguments():
         '--pca_out_path',
         type=str,
         default=None,
-        help='Path to output wav file')
+        help='Path to output pca file')
     parser.add_argument(
         '--save_every',
         type=int,
@@ -105,6 +105,10 @@ def write_wav(waveform, sample_rate, filename):
     librosa.output.write_wav(filename, y, sample_rate)
     print('Updated wav file at {}'.format(filename))
 
+'''
+EXTENSION
+This function writes the pca coefficients to a file (instead of previously directly the audio file)
+'''
 def write_pca(waveform, sample_rate, filename):
     y = np.array(waveform)
     h5f = h5py.File(filename, 'w')
@@ -117,9 +121,10 @@ def create_seed(filename,
                 quantization_channels,
                 window_size=WINDOW,
                 silence_threshold=SILENCE_THRESHOLD):
-    #audio, _ = librosa.load('/mnt/c/Users/Luzi/Music/williamson-a_few_things_to_hear_before_we_all_blow_up-12-a_please_goodbye_from_whore-59-88.mp3.wav', sr=sample_rate, mono=True)
-    #audio = audio_reader.trim_silence(audio, silence_threshold)
 
+    # EXTENSION
+    # the different seed generation had to be implemented -> also removing the one hot encoding and the mu-quantization
+    # and reading hdf5 files instead of wav files
     #quantized = mu_law_encode(audio, quantization_channels)
 
 
@@ -258,6 +263,8 @@ def main():
 
         if (args.pca_out_path and args.save_every and (step + 1) % args.save_every == 0):
             #out = sess.run(decode, feed_dict={samples: waveform})
+            # EXTENSION
+            # does not need to decode the mu-quantization
             write_pca(waveform, wavenet_params['sample_rate'], args.pca_out_path)
 
     # Introduce a newline to clear the carriage return from the progress.
@@ -278,6 +285,8 @@ def main():
         write_wav(out, wavenet_params['sample_rate'], args.wav_out_path)
 
     if args.pca_out_path:
+        # EXTENSION
+        # remove the decoding of the one-hot-vector and remove also the mu-quantization.
         #out = sess.run(decode, feed_dict={samples: waveform})
         write_pca(waveform, wavenet_params['sample_rate'], args.pca_out_path)
 
